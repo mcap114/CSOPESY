@@ -31,7 +31,7 @@ void CLI::run() {
             }
         }
         else {
-            std::cout << "Unrecognized command. Try again.\nEnter a command: ";
+            std::cout << "Unrecognized command. Try again.\n\nEnter a command: ";
         }
     }
 }
@@ -39,19 +39,23 @@ void CLI::run() {
 
 // Function to display the ASCII header
 void CLI::printHeader() {
+    std::string resetColor = "\033[0m";             // reset to default 
+    std::string mintgreenColor = "\033[38;5;87m";  // mint green 
+    std::string yellowColor = "\033[38;5;228m";   // light yellow 
+    
     std::cout << R"(
-.------..------..------..------..------..------..------.
-|C.--. ||S.--. ||O.--. ||P.--. ||E.--. ||S.--. ||Y.--. |
-| :/\: || :/\: || :/\: || :/\: || (\/) || :/\: || (\/) |
-| :\/: || :\/: || :\/: || (__) || :\/: || :\/: || :\/: |
-| '--'C|| '--'S|| '--'O|| '--'P|| '--'E|| '--'S|| '--'Y|
-`------'`------'`------'`------'`------'`------'`------'
+    .------..------..------..------..------..------..------.
+    |C.--. ||S.--. ||O.--. ||P.--. ||E.--. ||S.--. ||Y.--. |
+    | :/\: || :/\: || :/\: || :/\: || (\/) || :/\: || (\/) |
+    | :\/: || :\/: || :\/: || (__) || :\/: || :\/: || :\/: |
+    | '--'C|| '--'S|| '--'O|| '--'P|| '--'E|| '--'S|| '--'Y|
+    `------'`------'`------'`------'`------'`------'`------'
 
-)" << std::endl;
+    )" << std::endl;
 
-    std::cout << "Hello, Welcome to CSOPESY commandline!\n";
-    std::cout << "Type 'exit' to quit, 'clear' to clear the screen\n";
-    std::cout << "Enter a command: ";  // Keep this prompt on the same line as the command input
+    std::cout << mintgreenColor << "Hello, Welcome to CSOPESY commandline!\n" << resetColor;
+    std::cout << yellowColor << "Type 'exit' to quit, 'clear' to clear the screen\n" << resetColor;
+    std::cout << "Enter a command: ";  
 }
 
 // Clear screen and show header again without doubling the prompt
