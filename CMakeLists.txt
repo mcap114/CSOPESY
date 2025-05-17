@@ -11,7 +11,7 @@ add_executable(csopesy_emulator
     "Week 2 - OS Emulator Setup/CLI/CLI.cpp"
     # Add future files here:
     # "Week 6 - Scheduler/FCFS.cpp"
-)
+ "Week 3 - Designing Console Layouts/Screen/Screen.h" "Week 3 - Designing Console Layouts/Screen/Screen.cpp" "Week 3 - Designing Console Layouts/Screen/ScreenManager.h" "Week 3 - Designing Console Layouts/Screen/ScreenManager.cpp")
 
 # Include directories (for headers)
 target_include_directories(csopesy_emulator PRIVATE
