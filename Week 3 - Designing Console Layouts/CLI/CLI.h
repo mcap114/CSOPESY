@@ -8,11 +8,16 @@ public:
     CLI();                          
     void run();     
 
+    //state tracking
+    //flag to signal which screen to draw
     enum class AppState { MAIN_MENU, IN_SCREEN };
+
+private:
+
+    //state tracking values 
     AppState current_state_;
     std::string active_screen_name_;
 
-private:
     // Command map
     std::unordered_map<std::string, std::function<void()>> commands;
 
