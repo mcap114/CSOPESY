@@ -148,38 +148,55 @@ void CLI::createOrResumeScreen(const std::string& name, bool resume) {
 void CLI::runScreenConsole(const Screen& screenData) {
     clearConsole();
 
-    Screen screen = screenData;  // Copy so we can update progress if needed
+    Screen screen = screenData;
     std::string input;
 
     while (true) {
         clearConsole();
 
         int percent = (100 * screen.currentLine) / screen.totalLines;
-        int barWidth = 20;
-        int fill = (barWidth * percent) / 100;
+        int barBlocks = 10;
+        int filledBlocks = (barBlocks * percent) / 100;
 
+        // Build battery-style progress bar
         std::string progressBar = "[";
-        for (int i = 0; i < barWidth; ++i) {
-            progressBar += (i < fill) ? "#" : "-";
+        for (int i = 0; i < barBlocks; ++i) {
+            progressBar += (i < filledBlocks) ? "\033[38;5;82m█\033[0m" : "\033[38;5;240m░\033[0m";
         }
         progressBar += "] " + std::to_string(percent) + "%";
 
-        // Compose progress line for alignment
         std::stringstream progressLine;
         progressLine << screen.currentLine << " / " << screen.totalLines << " instructions";
 
-        // Draw table
-        std::cout << "+-----------+-----------------------------+\n";
-        std::cout << "| Process   | " << std::setw(27) << std::left << screen.name << "|\n";
-        std::cout << "+-----------+-----------------------------+\n";
-        std::cout << "| Progress  | " << std::setw(27) << std::left << progressLine.str() << "|\n";
-        std::cout << "| Created   | " << std::setw(27) << std::left << screen.timestamp << "|\n";
-        std::cout << "+-----------+-----------------------------+\n\n";
+        // Card-style box with themed colors
+        // Card-style box with themed colors
+        int contentWidth = 42; // Total content space (46 box width - 2 border - 2 padding)
 
-        std::cout << "Progress: " << progressBar << "\n";
-        std::cout << "Commands: 'exit' to return | 'next' to simulate progress\n\n";
+        // Card-style box with themed colors
+        std::cout << "╭────────────────────────────────────────────╮\n";
+        std::cout << "│               \033[38;5;87m♦ DASHBOARD ♦\033[0m                │\n";
+        std::cout << "├────────────────────────────────────────────┤\n";
 
-        std::cout << screen.name << "> ";
+        std::cout << "│ \033[38;5;228mProcess Name\033[0m : "
+                << std::left << std::setw(contentWidth - 14) << screen.name << "│\n";
+
+        std::cout << "│ \033[38;5;228mCreated At   \033[0m : "
+                << std::left << std::setw(contentWidth - 15) << screen.timestamp << "│\n";
+
+        std::cout << "│ \033[38;5;228mProgress     \033[0m : "
+                << std::left << std::setw(contentWidth - 15) << progressLine.str() << "│\n";
+
+        std::cout << "├────────────────────────────────────────────┤\n";
+
+        std::cout << "│ \033[38;5;87mProgress Bar \033[0m : "
+                << std::left << std::setw(contentWidth - 14) << progressBar << "│\n";
+
+        std::cout << "╰────────────────────────────────────────────╯\n\n";
+
+
+
+        std::cout << "\033[38;5;228mCommands:\033[0m \033[38;5;82m'exit'\033[0m to return | \033[38;5;82m'next'\033[0m to simulate progress\n\n";
+        std::cout << "\033[38;5;87m" << screen.name << "\033[0m> ";
         std::getline(std::cin, input);
 
         if (input == "exit") {
