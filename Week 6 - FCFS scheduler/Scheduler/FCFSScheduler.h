@@ -9,7 +9,6 @@
 #include "Process.h"
 
 // windows-specific thread initialization 
-// kept defaulting to windows threading for some reason, fix TBA
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

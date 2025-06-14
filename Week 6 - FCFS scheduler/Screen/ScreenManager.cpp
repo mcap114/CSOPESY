@@ -60,10 +60,10 @@ void ScreenManager::removeProcess(const std::string& screen_name, const std::str
 std::string ScreenManager::listScreens() const {
     std::lock_guard<std::mutex> lock(screen_mutex_);
     std::ostringstream oss;
-
-    oss << "╭──────────────────────────────────────╮\n"
+             
+    oss << "╭--------------------------------------╮\n"
         << "│ ACTIVE PROCESSES (screen -r NAME)    │\n"
-        << "├──────────────────────────────────────┤\n";
+        << "├--------------------------------------┤\n";
 
     if (screens_.empty()) {
         oss << "│ No active processes                 │\n";
@@ -77,6 +77,6 @@ std::string ScreenManager::listScreens() const {
 
     }
 
-    oss << "╰──────────────────────────────────────╯\n";
+    oss << "╰--------------------------------------╯\n";
     return oss.str();
 }
