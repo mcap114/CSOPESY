@@ -8,23 +8,40 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Configure output
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Screen module (fixed source paths)
+# Include directories
+include_directories(
+    "Week 6 - FCFS scheduler/CLI"
+    "Week 6 - FCFS scheduler/Screen"
+    "Week 6 - FCFS scheduler/Scheduler"
+)
+
+# Screen library
 add_library(Screen
-    "Week 3 - Designing Console Layouts/Screen/Screen.cpp"
-    "Week 3 - Designing Console Layouts/Screen/ScreenManager.cpp"
+    "Week 6 - FCFS scheduler/Screen/Screen.cpp"
+    "Week 6 - FCFS scheduler/Screen/ScreenManager.cpp"
+)
+
+# Scheduler library
+add_library(Scheduler
+    "Week 6 - FCFS scheduler/Scheduler/Process.cpp"
+    "Week 6 - FCFS scheduler/Scheduler/FCFSScheduler.cpp"
 )
 
 # Main executable
 add_executable(csopesy_emulator
-    "Week 3 - Designing Console Layouts/main.cpp"
-    "Week 3 - Designing Console Layouts/CLI/CLI.cpp"
+    "Week 6 - FCFS scheduler/main.cpp"
+    "Week 6 - FCFS scheduler/CLI/CLI.cpp"
 )
 
 # Link dependencies
-target_link_libraries(csopesy_emulator PRIVATE Screen)
+target_link_libraries(csopesy_emulator PRIVATE 
+    Screen
+    Scheduler
+)
 
-# Include directories
+# Additional include directories for the executable
 target_include_directories(csopesy_emulator PRIVATE
-    "Week 3 - Designing Console Layouts/CLI"
-    "Week 3 - Designing Console Layouts/Screen"
+    "Week 6 - FCFS scheduler/CLI"
+    "Week 6 - FCFS scheduler/Screen"
+    "Week 6 - FCFS scheduler/Scheduler"
 )
