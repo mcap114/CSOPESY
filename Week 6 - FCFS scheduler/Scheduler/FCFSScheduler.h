@@ -5,22 +5,38 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include <atomic>
 #include "Process.h"
+
+// windows-specific thread initialization 
+// kept defaulting to windows threading for some reason, fix TBA
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <process.h>
+#endif
 
 class FCFSScheduler {
 public:
-    FCFSScheduler(int numCores = 4);
+    explicit FCFSScheduler(unsigned int numCores = 4); // declare number of CPU cores here
     ~FCFSScheduler();
+
+    // disable copying
+    FCFSScheduler(const FCFSScheduler&) = delete;
+    FCFSScheduler& operator=(const FCFSScheduler&) = delete;
 
     void addProcess(std::shared_ptr<Process> process);
     void shutdown();
 
 private:
     void schedule();
-    void workerLoop(int coreId);
+    void workerLoop(unsigned int coreId);
 
-    int numCores;
-    bool running = true;
+
+    const unsigned int numCores;
+    std::atomic<bool> running{ true };
 
     std::queue<std::shared_ptr<Process>> processQueue;
     std::vector<std::queue<std::shared_ptr<Process>>> workerQueues;
@@ -28,6 +44,6 @@ private:
     std::thread schedulerThread;
     std::vector<std::thread> workerThreads;
 
-    std::mutex queueMutex;
+    mutable std::mutex queueMutex;
     std::condition_variable cv;
 };

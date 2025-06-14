@@ -5,8 +5,11 @@
 #include <sstream>
 #include <iomanip>
 
-CLI::CLI() : current_state_(AppState::MAIN_MENU) {
-    // commands defined in CLI.h
+CLI::CLI() :
+    current_state_(AppState::MAIN_MENU),
+    scheduler_(std::make_unique<FCFSScheduler>(4)) {
+
+    // Initialize commands
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
     commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerTest(args); };
@@ -14,6 +17,10 @@ CLI::CLI() : current_state_(AppState::MAIN_MENU) {
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
+}
+
+CLI::~CLI() {
+    scheduler_->shutdown();
 }
 
 void CLI::run() {
@@ -58,7 +65,10 @@ void CLI::printHeader(bool show_prompt) {
 
     std::cout << "Hello, Welcome to CSOPESY commandline!\n";
     std::cout << "Type 'exit' to quit, 'clear' to clear the screen\n";
-    
+
+    if (show_prompt && current_state_ == AppState::MAIN_MENU) {
+        std::cout << "\nEnter a command: ";
+    }
 }
 
 void CLI::clearScreen() {
@@ -67,7 +77,7 @@ void CLI::clearScreen() {
 #else
     std::system("clear");
 #endif
-    printHeader(false);  // Don't show prompt after clear
+    printHeader(false);
 }
 
 void CLI::handleInitialize(const std::string& args) {
@@ -78,15 +88,16 @@ void CLI::handleInitialize(const std::string& args) {
 }
 
 void CLI::handleScreen(const std::string& args) {
-    if (args.empty()) {
-        std::cout << "Usage: screen -r <name> (running) or -s <name> (stopped)\n";
+    if (args == "-ls") {
+       
+        std::cout << screen_manager_.listScreens();
         return;
     }
-
+    
     char mode;
     std::string name;
     if (!parseScreenArgs(args, mode, name)) {
-        std::cout << "Invalid format. Use: screen -r <name> or -s <name>\n";
+        std::cout << "Use: screen -r <name> or -s <name> or -ls\n";
         return;
     }
 
@@ -95,15 +106,15 @@ void CLI::handleScreen(const std::string& args) {
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
 
-        // Clear and redraw with prompt
         clearScreen();
         std::cout << screen_manager_.renderScreen(name) << "\n";
-        std::cout << "\nEnter a command: ";  // Explicit prompt for screen mode
+        std::cout << "\nEnter a command: ";
     }
     else {
         std::cout << "Already in a screen. Type 'exit' first.\n";
     }
 }
+
 bool CLI::parseScreenArgs(const std::string& args, char& mode, std::string& name) {
     std::istringstream iss(args);
     std::string flag;
@@ -117,26 +128,43 @@ void CLI::returnToMainMenu() {
     active_screen_name_.clear();
     clearScreen();
 }
+void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
+    // Create or focus the screen
+    screen_manager_.createOrFocusScreen(processName, true);
+
+    // Add process info to the screen
+    ProcessInfo info;
+    info.name = processName;
+    info.status = "RUNNING";
+    info.core = -1; // Will be updated when assigned
+    info.progress = "0/" + std::to_string(totalPrints);
+    info.creation_time = ""; // Will auto-populate
+
+    screen_manager_.addProcess(processName, info);
+}
 
 void CLI::handleSchedulerTest(const std::string& args) {
     int numProcesses = 10;
     int printsPerProcess = 100;
 
-    // parse arguments 
+    // Parse arguments if provided
     std::istringstream iss(args);
     if (!args.empty()) {
         iss >> numProcesses >> printsPerProcess;
     }
 
-    std::cout << "Starting scheduler test with " << numProcesses
-        << " processes, each with " << printsPerProcess
-        << " print commands\n";
+    std::cout << "Creating " << numProcesses << " processes...\n";
 
-    // create and add processes
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
+
+        // 1. Create the process
         scheduler_->addProcess(std::make_shared<Process>(name, printsPerProcess));
-        std::cout << "Added " << name << "\n";
+
+        // 2. Auto-create its screen
+        createProcessScreen(name, printsPerProcess);
+
+        std::cout << "Created process: " << name << "\n";
     }
 }
 
@@ -144,18 +172,17 @@ void CLI::handleSchedulerStop(const std::string& args) {
     std::cout << "Stopping scheduler...\n";
     scheduler_->shutdown();
     std::cout << "Scheduler stopped\n";
+    // reinitialize scheduler for future use
+    scheduler_ = std::make_unique<FCFSScheduler>(4);
 }
-
 
 void CLI::handleReportUtil(const std::string& args) {
-    std::cout << "report-util command recognized. Doing something.\n";
-    if (!args.empty()) {
-        std::cout << "Received args: " << args << "\n";
-    }
+    std::cout << "Scheduler Utilization Report:\n";
+    std::cout << "---------------------------\n";
+    // TODO: add actual utilization reporting logic here
+    std::cout << "Processes completed: [implement reporting]\n";
+    std::cout << "Current queue size: [implement reporting]\n";
 }
-
-
-
 
 void CLI::handleExit(const std::string& args) {
     if (!args.empty() && args == "-f") {

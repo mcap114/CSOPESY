@@ -9,6 +9,7 @@
 class CLI {
 public:
     CLI();
+    ~CLI();
     void run();
 
     enum class AppState { MAIN_MENU, IN_SCREEN };
@@ -37,5 +38,6 @@ private:
     void handleExit(const std::string& args);
 
     // Helper functions
+    void createProcessScreen(const std::string& processName, int totalPrints);
     bool parseScreenArgs(const std::string& args, char& mode, std::string& name);
 };

@@ -1,5 +1,6 @@
 ﻿#include "Screen.h"
 #include <ctime>
+#include <algorithm>
 
 Screen::Screen(const std::string& name, bool is_running)
     : name_(name), is_running_(is_running),
@@ -11,24 +12,66 @@ std::string Screen::getCreationTime() const {
     std::tm tm = *std::localtime(&time);
 
     std::ostringstream oss;
-    oss << std::put_time(&tm, "%m/%d/%Y, %I:%M:%S %p");
+    oss << std::put_time(&tm, "%m/%d/%Y %I:%M:%S %p");
     return oss.str();
 }
 
-std::string Screen::getProgress() const {
-    return std::to_string(current_line_) + "/" + std::to_string(total_lines_);
+void Screen::addProcess(const ProcessInfo& process) {
+    std::lock_guard<std::mutex> lock(process_mutex_);
+    processes_.push_back(process);
+}
+
+void Screen::updateProcess(const std::string& process_name, const std::string& status,
+    int core, const std::string& progress) {
+    std::lock_guard<std::mutex> lock(process_mutex_);
+    auto it = std::find_if(processes_.begin(), processes_.end(),
+        [&](const ProcessInfo& p) { return p.name == process_name; });
+
+    if (it != processes_.end()) {
+        it->status = status;
+        it->core = core;
+        it->progress = progress;
+    }
+}
+
+void Screen::removeProcess(const std::string& process_name) {
+    std::lock_guard<std::mutex> lock(process_mutex_);
+    processes_.erase(std::remove_if(processes_.begin(), processes_.end(),
+        [&](const ProcessInfo& p) { return p.name == process_name; }),
+        processes_.end());
 }
 
 std::string Screen::render() const {
     std::ostringstream oss;
-    oss << "╭────────────────────────────────────────────╮\n"
-        << "│               \033[38;5;87m♦ DASHBOARD ♦\033[0m                │\n"
-        << "├────────────────────────────────────────────┤\n"
-        << "│SCREEN: " << std::left << std::setw(16) << name_ << "│\n"
-        << "├────────────────────────────────────────────┤\n"
-        << "│ Status:   " << std::setw(16) << (is_running_ ? "RUNNING" : "STOPPED") << "│\n"
-        << "│ Progress: " << std::setw(16) << getProgress() << "│\n"
-        << "│ Created:  " << std::setw(16) << getCreationTime() << "│\n"
-        << "╰────────────────────────────────────────────╯\n\n";
+    oss << "╭──────────────────────────────────────────────────────╮\n"
+        << "│                \033[38;5;87m♦ PROCESS SCHEDULER ♦\033[0m               │\n"
+        << "├──────────────────────────────────────────────────────┤\n"
+        << "│ SCREEN: " << std::left << std::setw(38) << name_ << "│\n"
+        << "│ STATUS:  " << std::setw(38) << (is_running_ ? "RUNNING" : "STOPPED") << "│\n"
+        << "│ CREATED: " << std::setw(38) << getCreationTime() << "│\n"
+        << "├──────────────────────────────────────────────────────┤\n";
+
+    oss << renderProcessList();
+    oss << "╰──────────────────────────────────────────────────────╯\n";
+    return oss.str();
+}
+
+std::string Screen::renderProcessList() const {
+    std::lock_guard<std::mutex> lock(process_mutex_);
+    std::ostringstream oss;
+
+    if (processes_.empty()) {
+        oss << "│ No processes running                                │\n";
+        return oss.str();
+    }
+
+    oss << "│ RUNNING PROCESSES:                                  │\n";
+    for (const auto& process : processes_) {
+        oss << "│ • " << std::left << std::setw(16) << process.name
+            << " Core:" << std::setw(2) << process.core
+            << " " << std::setw(10) << (is_running_ ? "RUNNING" : "COMPLETE")
+            << " " << process.progress << std::setw(5) << " │\n";
+    }
+
     return oss.str();
 }

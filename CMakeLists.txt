@@ -5,15 +5,14 @@ project(CSOPESY_Emulator)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Windows-specific settings
+if(WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0601)  # Windows 7+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+endif()
+
 # Configure output
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Include directories
-include_directories(
-    "Week 6 - FCFS scheduler/CLI"
-    "Week 6 - FCFS scheduler/Screen"
-    "Week 6 - FCFS scheduler/Scheduler"
-)
 
 # Screen library
 add_library(Screen
@@ -39,7 +38,7 @@ target_link_libraries(csopesy_emulator PRIVATE
     Scheduler
 )
 
-# Additional include directories for the executable
+# Include directories
 target_include_directories(csopesy_emulator PRIVATE
     "Week 6 - FCFS scheduler/CLI"
     "Week 6 - FCFS scheduler/Screen"
