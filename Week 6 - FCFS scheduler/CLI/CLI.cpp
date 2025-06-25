@@ -12,7 +12,7 @@ CLI::CLI() :
     // Initialize commands
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
-    commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerTest(args); };
+    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
