@@ -34,8 +34,18 @@ void CLI::run() {
         std::getline(std::cin, input);
 
         // Handle exit command differently based on state
-        if (current_state_ == AppState::IN_SCREEN && input == "exit") {
-            returnToMainMenu();
+        if (current_state_ == AppState::IN_SCREEN) {
+            if (input == "exit") {
+                returnToMainMenu();
+                continue;
+            }
+            else if (input == "process-smi") {
+                std::cout << screen_manager_.renderScreen(active_screen_name_);
+            }
+            else {
+                std::cout << "Unrecognized command in screen. Type 'process-smi' or 'exit'.\n";
+                std::cout << "root:\\> ";
+            }
             continue;
         }
 
