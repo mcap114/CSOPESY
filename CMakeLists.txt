@@ -16,21 +16,21 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Screen library
 add_library(Screen
-    "Week 6 - FCFS scheduler/Screen/Screen.cpp"
-    "Week 6 - FCFS scheduler/Screen/ScreenManager.cpp"
-)
+    "MCO1/Screen/Screen.cpp"
+    "MCO1/Screen/ScreenManager.cpp"
+ "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
 
 # Scheduler library
 add_library(Scheduler
-    "Week 6 - FCFS scheduler/Scheduler/Process.cpp"
-    "Week 6 - FCFS scheduler/Scheduler/FCFSScheduler.cpp"
-)
+    "MCO1/Scheduler/Process.cpp"
+    "MCO1/Scheduler/FCFSScheduler.cpp"
+ "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
 
 # Main executable
 add_executable(csopesy_emulator
-    "Week 6 - FCFS scheduler/main.cpp"
-    "Week 6 - FCFS scheduler/CLI/CLI.cpp"
-)
+    "MCO1/main.cpp"
+    "MCO1/CLI/CLI.cpp"
+ "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
 
 # Link dependencies
 target_link_libraries(csopesy_emulator PRIVATE 
@@ -40,7 +40,7 @@ target_link_libraries(csopesy_emulator PRIVATE
 
 # Include directories
 target_include_directories(csopesy_emulator PRIVATE
-    "Week 6 - FCFS scheduler/CLI"
-    "Week 6 - FCFS scheduler/Screen"
-    "Week 6 - FCFS scheduler/Scheduler"
+    "MCO1/CLI"
+    "MCO1/Screen"
+    "MCO1/Scheduler"
 )
