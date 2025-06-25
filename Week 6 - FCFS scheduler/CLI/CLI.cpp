@@ -55,13 +55,13 @@ void CLI::run() {
 
 void CLI::printHeader(bool show_prompt) {
     std::cout << R"(
-.------..------..------..------..------..------..------.
-|C.--. ||S.--. ||O.--. ||P.--. ||E.--. ||S.--. ||Y.--. |
-| :/\: || :/\: || :/\: || :/\: || (\/) || :/\: || (\/) |
-| :\/: || :\/: || :\/: || (__) || :\/: || :\/: || :\/: |
-| '--'C|| '--'S|| '--'O|| '--'P|| '--'E|| '--'S|| '--'Y|
-`------'`------'`------'`------'`------'`------'`------'
-)" << std::endl;
+    .------..------..------..------..------..------..------.
+    |C.--. ||S.--. ||O.--. ||P.--. ||E.--. ||S.--. ||Y.--. |
+    | :/\: || :/\: || :/\: || :/\: || (\/) || :/\: || (\/) |
+    | :\/: || :\/: || :\/: || (__) || :\/: || :\/: || :\/: |
+    | '--'C|| '--'S|| '--'O|| '--'P|| '--'E|| '--'S|| '--'Y|
+    `------'`------'`------'`------'`------'`------'`------'
+    )" << std::endl;
 
     std::cout << "Hello, Welcome to CSOPESY commandline!\n";
     std::cout << "Type 'exit' to quit, 'clear' to clear the screen\n";
@@ -74,7 +74,9 @@ void CLI::clearScreen() {
 #else
     std::system("clear");
 #endif
-    printHeader(false);
+    if (current_state_ == AppState::MAIN_MENU) {
+        printHeader();
+    }
 }
 
 void CLI::handleInitialize(const std::string& args) {
@@ -116,7 +118,7 @@ void CLI::handleScreen(const std::string& args) {
     }
     else if (mode == 'r') {
         if (!screen_manager_.screenExists(name)) {
-            std::cout << "Process " << name << " not found." << "Need to be initialized via screen -s " << name << "\n";
+            std::cout << "Process " << name << " not found. Need to be initialized via screen -s " << name << "\n";
             return;
         }
         
