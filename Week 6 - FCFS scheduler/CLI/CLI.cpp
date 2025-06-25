@@ -54,7 +54,13 @@ void CLI::run() {
         std::string cmd = input.substr(0, space_pos);
         std::string args = (space_pos != std::string::npos) ? input.substr(space_pos + 1) : "";
 
+        // If not initialized
         if (commands.find(cmd) != commands.end()) {
+            if (!is_initialized_ && cmd != "initialize" && cmd != "exit") {
+                std::cout << "System not initialized. Please run 'initialize' first.\n";
+                continue;
+            }
+
             commands[cmd](args);
         }
         else {
@@ -90,10 +96,18 @@ void CLI::clearScreen() {
 }
 
 void CLI::handleInitialize(const std::string& args) {
+    if (is_initialized_) {
+        std::cout << "Processor already initialized.\n";
+        return;
+    }
+
     std::cout << "initialize command recognized. Doing something.\n";
     if (!args.empty()) {
         std::cout << "Received args: " << args << "\n";
     }
+
+    is_initialized_ = true;
+    std::cout << "\nInitialization complete.\n";
 }
 
 void CLI::handleScreen(const std::string& args) {
@@ -213,6 +227,8 @@ void CLI::handleReportUtil(const std::string& args) {
 }
 
 void CLI::handleExit(const std::string& args) {
+    is_initialized_ = false;
+
     if (!args.empty() && args == "-f") {
         std::cout << "Force exiting CSOPESY CLI Emulator. Goodbye!\n";
         exit(0);
