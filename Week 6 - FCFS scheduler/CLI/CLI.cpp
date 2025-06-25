@@ -66,9 +66,6 @@ void CLI::printHeader(bool show_prompt) {
     std::cout << "Hello, Welcome to CSOPESY commandline!\n";
     std::cout << "Type 'exit' to quit, 'clear' to clear the screen\n";
 
-    if (show_prompt && current_state_ == AppState::MAIN_MENU) {
-        std::cout << "\nEnter a command: ";
-    }
 }
 
 void CLI::clearScreen() {
@@ -101,17 +98,32 @@ void CLI::handleScreen(const std::string& args) {
         return;
     }
 
-    if (current_state_ == AppState::MAIN_MENU) {
-        screen_manager_.createOrFocusScreen(name, mode == 'r');
+    if (current_state_ != AppState::MAIN_MENU) {
+        std::cout << "Already in a screen. Type 'exit' first.\n";
+        return;
+    }
+
+    // only 'screen -s' creates new screen
+    if (mode == 's') {
+        
+        screen_manager_.createOrFocusScreen(name, false);  
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
-
         clearScreen();
         std::cout << screen_manager_.renderScreen(name) << "\n";
         std::cout << "\nEnter a command: ";
     }
-    else {
-        std::cout << "Already in a screen. Type 'exit' first.\n";
+    else if (mode == 'r') {
+        if (!screen_manager_.screenExists(name)) {
+            std::cout << "Need to be initialized via screen -s " << name << " because it doesn’t exist\n";
+            return;
+        }
+        
+        current_state_ = AppState::IN_SCREEN;
+        active_screen_name_ = name;
+        clearScreen();
+        std::cout << screen_manager_.renderScreen(name) << "\n";
+        std::cout << "\nEnter a command: ";
     }
 }
 
