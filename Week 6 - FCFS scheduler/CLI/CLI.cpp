@@ -106,24 +106,24 @@ void CLI::handleScreen(const std::string& args) {
     // only 'screen -s' creates new screen
     if (mode == 's') {
         
-        screen_manager_.createOrFocusScreen(name, false);  
+        int totalPrints = 50;
+        createProcessScreen(name, totalPrints);
+
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
         clearScreen();
-        std::cout << screen_manager_.renderScreen(name) << "\n";
-        std::cout << "\nEnter a command: ";
+        std::cout << screen_manager_.renderScreen(name);
     }
     else if (mode == 'r') {
         if (!screen_manager_.screenExists(name)) {
-            std::cout << "Need to be initialized via screen -s " << name << " because it doesn’t exist\n";
+            std::cout << "Process " << name << " not found." << "Need to be initialized via screen -s " << name << "\n";
             return;
         }
         
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
         clearScreen();
-        std::cout << screen_manager_.renderScreen(name) << "\n";
-        std::cout << "\nEnter a command: ";
+        std::cout << screen_manager_.renderScreen(name);
     }
 }
 
@@ -140,17 +140,21 @@ void CLI::returnToMainMenu() {
     active_screen_name_.clear();
     clearScreen();
 }
+
 void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     // Create or focus the screen
     screen_manager_.createOrFocusScreen(processName, true);
 
     // Add process info to the screen
     ProcessInfo info;
+    info.id = next_process_id_++;
     info.name = processName;
     info.status = "RUNNING";
     info.core = -1; // Will be updated when assigned
     info.progress = "0/" + std::to_string(totalPrints);
     info.creation_time = ""; // Will auto-populate
+    info.instruction_line = 0;
+    info.total_instructions = totalPrints;
 
     screen_manager_.addProcess(processName, info);
 }
