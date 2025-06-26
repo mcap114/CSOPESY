@@ -41,6 +41,8 @@ public:
     // Rendering
     std::string render() const;
     std::string renderProcessList() const;
+    std::vector<ProcessInfo>& getProcessesRef() { return processes_; }
+
 
 private:
     std::string name_;

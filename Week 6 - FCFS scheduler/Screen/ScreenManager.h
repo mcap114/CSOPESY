@@ -23,7 +23,7 @@ public:
     // Process management
     void addProcess(const std::string& screen_name, const ProcessInfo& process);
     void updateProcess(const std::string& screen_name, const std::string& process_name,
-        const std::string& status, int core, const std::string& progress);
+        const ProcessInfo& updated);
     void removeProcess(const std::string& screen_name, const std::string& process_name);
 
     // Listing functionality

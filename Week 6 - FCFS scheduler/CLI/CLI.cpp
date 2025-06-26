@@ -200,7 +200,9 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     int procId = next_process_id_++;
     auto proc = std::make_shared<Process>(processName, totalPrints);
     proc->setProcessId(procId);  
-    scheduler_->addProcess(proc);
+
+    int instructionCount = rand() % 6 + 5; // random between 5 and 10
+    proc->generateRandomInstructions(instructionCount);
 
     // Add process info to the screen
     ProcessInfo info;
@@ -218,9 +220,18 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     info.instruction_line = 0;
     info.total_instructions = totalPrints;
 
-    proc->setUpdateCallback([this](const std::string& pname, int coreId, const std::string& progress) {
-        screen_manager_.updateProcess(pname, pname, "RUNNING", coreId, progress);
+    proc->setUpdateCallback([this, proc](const std::string& pname, int coreId, const std::string& progress) {
+        ProcessInfo updatedInfo;
+        updatedInfo.name = pname;
+        updatedInfo.core = coreId;
+        updatedInfo.status = "RUNNING";
+        updatedInfo.progress = progress;
+        updatedInfo.instruction_line = proc->getInstructionLine();  // NEW
+        screen_manager_.updateProcess(pname, pname, updatedInfo);
     });
+    
+
+    scheduler_->addProcess(proc);
 
     screen_manager_.addProcess(processName, info);
 }
@@ -240,10 +251,6 @@ void CLI::handleSchedulerTest(const std::string& args) {
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
 
-        // 1. Create the process
-        scheduler_->addProcess(std::make_shared<Process>(name, printsPerProcess));
-
-        // 2. Auto-create its screen
         createProcessScreen(name, printsPerProcess);
 
         std::cout << "Created process: " << name << "\n";

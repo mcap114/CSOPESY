@@ -76,7 +76,7 @@ void FCFSScheduler::workerLoop(unsigned int coreId) {
         if (process) {
 
             while (!process->isCompleted() && running) {
-                process->executePrint(coreId);
+                process->executeNextInstruction(coreId);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
 

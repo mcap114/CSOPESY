@@ -43,11 +43,20 @@ void ScreenManager::addProcess(const std::string& screen_name,
 }
 
 void ScreenManager::updateProcess(const std::string& screen_name, const std::string& process_name,
-    const std::string& status, int core, const std::string& progress) {
-    std::lock_guard<std::mutex> lock(screen_mutex_);
-    if (auto it = screens_.find(screen_name); it != screens_.end()) {
-        it->second->updateProcess(process_name, status, core, progress);
-    }
+    const ProcessInfo& updated) {
+        std::lock_guard<std::mutex> lock(screen_mutex_);
+        if (auto it = screens_.find(screen_name); it != screens_.end()) {
+            auto& procs = it->second->getProcessesRef(); // NEW FUNCTION you'll add next
+            for (auto& proc : procs) {
+                if (proc.name == process_name) {
+                    proc.status = updated.status;
+                    proc.core = updated.core;
+                    proc.progress = updated.progress;
+                    proc.instruction_line = updated.instruction_line;
+                    break;
+                }
+            }
+        }    
 }
 
 void ScreenManager::removeProcess(const std::string& screen_name, const std::string& process_name) {
