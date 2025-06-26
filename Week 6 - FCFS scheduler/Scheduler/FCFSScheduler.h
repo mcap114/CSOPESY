@@ -6,7 +6,6 @@
 #include <condition_variable>
 #include <memory>
 #include <atomic>
-#include <unordered_map> 
 #include "Process.h"
 
 // windows-specific thread initialization 
@@ -28,9 +27,8 @@ public:
     FCFSScheduler& operator=(const FCFSScheduler&) = delete;
 
     void addProcess(std::shared_ptr<Process> process);
+    unsigned int getNumCores();
     void shutdown();
-
-    std::shared_ptr<Process> getProcess(const std::string& name) const;
 
 private:
     void schedule();
@@ -48,6 +46,4 @@ private:
 
     mutable std::mutex queueMutex;
     std::condition_variable cv;
-
-    std::unordered_map<std::string, std::shared_ptr<Process>> processMap;
 };

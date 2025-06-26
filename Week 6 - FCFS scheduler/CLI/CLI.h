@@ -15,10 +15,7 @@ public:
     enum class AppState { MAIN_MENU, IN_SCREEN };
 
 private:
-    bool is_initialized_ = false;
-
     // State tracking
-    int next_process_id_ = 1;
     AppState current_state_;
     std::string active_screen_name_;
     ScreenManager screen_manager_;

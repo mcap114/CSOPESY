@@ -43,20 +43,11 @@ void ScreenManager::addProcess(const std::string& screen_name,
 }
 
 void ScreenManager::updateProcess(const std::string& screen_name, const std::string& process_name,
-    const ProcessInfo& updated) {
-        std::lock_guard<std::mutex> lock(screen_mutex_);
-        if (auto it = screens_.find(screen_name); it != screens_.end()) {
-            auto& procs = it->second->getProcessesRef(); // NEW FUNCTION you'll add next
-            for (auto& proc : procs) {
-                if (proc.name == process_name) {
-                    proc.status = updated.status;
-                    proc.core = updated.core;
-                    proc.progress = updated.progress;
-                    proc.instruction_line = updated.instruction_line;
-                    break;
-                }
-            }
-        }    
+    const std::string& status, int core, const std::string& progress) {
+    std::lock_guard<std::mutex> lock(screen_mutex_);
+    if (auto it = screens_.find(screen_name); it != screens_.end()) {
+        it->second->updateProcess(process_name, status, core, progress);
+    }
 }
 
 void ScreenManager::removeProcess(const std::string& screen_name, const std::string& process_name) {
@@ -69,61 +60,23 @@ void ScreenManager::removeProcess(const std::string& screen_name, const std::str
 std::string ScreenManager::listScreens() const {
     std::lock_guard<std::mutex> lock(screen_mutex_);
     std::ostringstream oss;
+             
+    oss << "╭--------------------------------------╮\n"
+        << "│ ACTIVE PROCESSES (screen -r NAME)    │\n"
+        << "├--------------------------------------┤\n";
 
-    // Placeholder CPU stats (customize later if needed)
-    int total_cores = 4;
-    int used_cores = 4;
-    int available_cores = total_cores - used_cores;
-    int utilization = (used_cores * 100) / total_cores;
-
-    oss << "CPU utilization: " << utilization << "%\n";
-    oss << "Cores used: " << used_cores << "\n";
-    oss << "Cores available: " << available_cores << "\n\n";
-
-    // Split processes into running and finished
-    std::vector<ProcessInfo> running;
-    std::vector<ProcessInfo> finished;
-
-    for (const auto& [name, screen] : screens_) {
-        const auto& processes = screen->getProcesses();
-        if (!processes.empty()) {
-            const auto& proc = processes[0];
-            if (proc.instruction_line >= proc.total_instructions) {
-                finished.push_back(proc);
-            } else {
-                running.push_back(proc);
-            }
+    if (screens_.empty()) {
+        oss << "│ No active processes                 │\n";
+    }
+    else {
+        for (const auto& [name, screen] : screens_) {
+            std::string status = screen->isRunning() ? "RUNNING" : "FINISHED";
+            oss << "║ " << std::left << std::setw(26) << name
+                << " │ " << std::setw(15) << "FINISHED" << " ║\n";
         }
+
     }
 
-    // Running section
-    oss << "------------------------------------------------------------\n";
-    oss << "Running processes:\n";
-    for (const auto& proc : running) {
-        oss << proc.name
-            << "\t(" << proc.creation_time << ")"
-            << "\tCore: " << proc.core
-            << "\t" << proc.instruction_line << " / " << proc.total_instructions << "\n";
-    }
-
-    // Finished section
-    oss << "\nFinished processes:\n";
-    for (const auto& proc : finished) {
-        oss << proc.name
-            << "\t(" << proc.creation_time << ")"
-            << "\tFinished"
-            << "\t" << proc.total_instructions << " / " << proc.total_instructions << "\n";
-    }
-
+    oss << "╰--------------------------------------╯\n";
     return oss.str();
-}
-
-
-Screen* ScreenManager::getScreen(const std::string& name) {
-    std::lock_guard<std::mutex> lock(screen_mutex_);
-    auto it = screens_.find(name);
-    if (it != screens_.end()) {
-        return it->second.get();
-    }
-    return nullptr;
 }

@@ -7,11 +7,14 @@
 #include <mutex>
 
 struct ProcessInfo {
+    int id = 0;
     std::string name;
     std::string status;
     int core;
     std::string progress;
     std::string creation_time;
+    int instruction_line = 0;
+    int total_instructions = 50;
 };
 
 class Screen {
@@ -38,6 +41,8 @@ public:
     // Rendering
     std::string render() const;
     std::string renderProcessList() const;
+    std::vector<ProcessInfo>& getProcessesRef() { return processes_; }
+
 
 private:
     std::string name_;

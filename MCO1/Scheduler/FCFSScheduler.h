@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <memory>
 #include <atomic>
+#include <unordered_map> 
 #include "Process.h"
 
 // windows-specific thread initialization 
@@ -29,6 +30,8 @@ public:
     void addProcess(std::shared_ptr<Process> process);
     void shutdown();
 
+    std::shared_ptr<Process> getProcess(const std::string& name) const;
+
 private:
     void schedule();
     void workerLoop(unsigned int coreId);
@@ -45,4 +48,6 @@ private:
 
     mutable std::mutex queueMutex;
     std::condition_variable cv;
+
+    std::unordered_map<std::string, std::shared_ptr<Process>> processMap;
 };

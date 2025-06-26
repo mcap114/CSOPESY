@@ -43,16 +43,32 @@ void Screen::removeProcess(const std::string& process_name) {
 
 std::string Screen::render() const {
     std::ostringstream oss;
-    oss << "╭──────────────────────────────────────────────────────╮\n"
-        << "│                \033[38;5;87m♦ PROCESS SCHEDULER ♦\033[0m               │\n"
-        << "├──────────────────────────────────────────────────────┤\n"
-        << "│ SCREEN: " << std::left << std::setw(38) << name_ << "│\n"
-        << "│ STATUS:  " << std::setw(38) << (is_running_ ? "RUNNING" : "STOPPED") << "│\n"
-        << "│ CREATED: " << std::setw(38) << getCreationTime() << "│\n"
-        << "├──────────────────────────────────────────────────────┤\n";
+    std::lock_guard<std::mutex> lock(process_mutex_);
 
-    oss << renderProcessList();
-    oss << "╰──────────────────────────────────────────────────────╯\n";
+    if (processes_.empty()) {
+        oss << "No process info available.\n";
+        return oss.str();
+    }
+
+    const ProcessInfo& proc = processes_.front();  
+
+    int id = 0;
+    std::string name = proc.name;
+    size_t underscore = name.find_last_of('_');
+    if (underscore != std::string::npos) {
+        try {
+            id = std::stoi(name.substr(underscore + 1));
+        } catch (...) {
+            id = 0;
+        }
+    }
+
+    oss << "\nProcess: " << proc.name << "\n";
+    oss << "ID: " << proc.id << "\n\n"; 
+    oss << "Current instruction line: " << proc.instruction_line << "\n";
+    oss << "Lines of code: " << proc.total_instructions << "\n";
+    oss << "root:\\> ";
+
     return oss.str();
 }
 

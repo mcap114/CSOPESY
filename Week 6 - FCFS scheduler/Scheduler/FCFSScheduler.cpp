@@ -24,42 +24,27 @@ void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         processQueue.push(process);
-        processMap[process->getName()] = process; 
     }
     cv.notify_one();
 }
 
-std::shared_ptr<Process> FCFSScheduler::getProcess(const std::string& name) const {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    auto it = processMap.find(name);
-    if (it != processMap.end()) {
-        return it->second;
-    }
-    return nullptr;
-}
-
 void FCFSScheduler::schedule() {
-    unsigned int nextCore = 0;
-
     while (running) {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] {
             return !processQueue.empty() || !running;
-        });
+            });
 
         if (!running) break;
 
-        // Assign processes one by one to cores in round-robin
-        while (!processQueue.empty()) {
-            workerQueues[nextCore].push(processQueue.front());
-            processQueue.pop();
-
-            // Move to next core (cycle through cores)
-            nextCore = (nextCore + 1) % numCores;
+        for (unsigned int core = 0; core < numCores; ++core) {
+            if (workerQueues[core].empty() && !processQueue.empty()) {
+                workerQueues[core].push(processQueue.front());
+                processQueue.pop();
+            }
         }
     }
 }
-
 
 void FCFSScheduler::workerLoop(unsigned int coreId) {
     while (running) {
@@ -76,7 +61,7 @@ void FCFSScheduler::workerLoop(unsigned int coreId) {
         if (process) {
 
             while (!process->isCompleted() && running) {
-                process->executeNextInstruction(coreId);
+                process->executePrint(coreId);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
 
