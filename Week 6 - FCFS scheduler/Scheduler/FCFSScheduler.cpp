@@ -39,22 +39,27 @@ std::shared_ptr<Process> FCFSScheduler::getProcess(const std::string& name) cons
 }
 
 void FCFSScheduler::schedule() {
+    unsigned int nextCore = 0;
+
     while (running) {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] {
             return !processQueue.empty() || !running;
-            });
+        });
 
         if (!running) break;
 
-        for (unsigned int core = 0; core < numCores; ++core) {
-            if (workerQueues[core].empty() && !processQueue.empty()) {
-                workerQueues[core].push(processQueue.front());
-                processQueue.pop();
-            }
+        // Assign processes one by one to cores in round-robin
+        while (!processQueue.empty()) {
+            workerQueues[nextCore].push(processQueue.front());
+            processQueue.pop();
+
+            // Move to next core (cycle through cores)
+            nextCore = (nextCore + 1) % numCores;
         }
     }
 }
+
 
 void FCFSScheduler::workerLoop(unsigned int coreId) {
     while (running) {
