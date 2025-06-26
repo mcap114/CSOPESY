@@ -19,6 +19,10 @@ public:
     void setProcessId(int id) { process_id_ = id; }
     int getProcessId() const { return process_id_; }
 
+    using UpdateCallback = std::function<void(const std::string& name, int coreId, const std::string& progress)>;
+
+    void setUpdateCallback(UpdateCallback cb);
+
 private:
     std::string name;
     int process_id_ = -1;
@@ -30,4 +34,6 @@ private:
     std::vector<std::string> logs;
 
     std::string getCurrentTimestamp();
+
+    UpdateCallback updateCallback;
 };
