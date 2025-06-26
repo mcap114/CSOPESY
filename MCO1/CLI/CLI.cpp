@@ -7,9 +7,11 @@
 #include <thread>   // For sleep
 #include <chrono>   // For milliseconds
 
+
 CLI::CLI() :
     current_state_(AppState::MAIN_MENU),
-    scheduler_(std::make_unique<FCFSScheduler>(4)) {
+    scheduler_(std::make_unique<FCFSScheduler>(4)) 
+{
 
     // Initialize commands
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
@@ -23,6 +25,43 @@ CLI::CLI() :
     commands["sleep"] = [this](const std::string& args) { handleSleep(args); };
     commands["for"] = [this](const std::string& args) { handleFor(args); };
 }
+
+//constructor with config
+CLI::CLI(const Config& config)
+    : current_state_(AppState::MAIN_MENU), config_(config)
+{
+    std::string scheduler_type = config_.getString("scheduler");
+    int num_cores = config_.getInt("num-cpu");
+    int delay = config_.getInt("delay-per-exec");
+    int quantum = config.getInt("quantum-cycles");
+
+    cpu_timer_.start(); 
+    report_gen_ = std::make_unique<ReportGenerator>(num_cores); 
+
+    if (scheduler_type == "rr") {
+        int quantum = config_.getInt("quantum-cycles");
+        scheduler_ = std::make_unique<RRScheduler>(num_cores, quantum);
+    }
+    else if (scheduler_type == "fcfs") {
+        scheduler_ = std::make_unique<FCFSScheduler>(num_cores,delay);
+    }
+    else {
+        throw std::runtime_error("Unknown scheduler type in config: " + scheduler_type);
+    }
+
+    // Initialize commands
+    commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
+    commands["screen"] = [this](const std::string& args) { handleScreen(args); };
+    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
+    commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
+    commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
+    commands["clear"] = [this](const std::string& args) { clearScreen(); };
+    commands["exit"] = [this](const std::string& args) { handleExit(args); };
+    commands["sleep"] = [this](const std::string& args) { handleSleep(args); };
+    commands["for"] = [this](const std::string& args) { handleFor(args); };
+}
+
+
 
 CLI::~CLI() {
     scheduler_->shutdown();
@@ -163,7 +202,7 @@ void CLI::handleScreen(const std::string& args) {
     // only 'screen -s' creates new screen
     if (mode == 's') {
         
-        int totalPrints = 50;
+        int totalPrints = config_.getInt("max-ins");
         createProcessScreen(name, totalPrints);
 
         current_state_ = AppState::IN_SCREEN;
@@ -203,10 +242,16 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     screen_manager_.createOrFocusScreen(processName, true);
 
     int procId = next_process_id_++;
-    auto proc = std::make_shared<Process>(processName, totalPrints);
+
+    int minIns = config_.getInt("min-ins");            // [CONFIG UPDATE]
+    int maxIns = config_.getInt("max-ins");            // [CONFIG UPDATE]
+    int delay = config_.getInt("delay-per-exec");      // [CONFIG UPDATE]
+    int instructionCount = minIns + (rand() % (maxIns - minIns + 1));
+
+    auto proc = std::make_shared<Process>(processName, instructionCount);
     proc->setProcessId(procId);  
 
-    int instructionCount = rand() % 6 + 5; // random between 5 and 10
+    //int instructionCount = rand() % 6 + 5; // random between 5 and 10
     proc->generateRandomInstructions(instructionCount);
 
     // Add process info to the screen
@@ -244,8 +289,8 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
 void CLI::handleSchedulerTest(const std::string& args) {
     int numProcesses = 10;
     int printsPerProcess = 100;
+    int freq = config_.getInt("batch-process-freq");
 
-    // Parse arguments if provided
     std::istringstream iss(args);
     if (!args.empty()) {
         iss >> numProcesses >> printsPerProcess;
@@ -255,10 +300,12 @@ void CLI::handleSchedulerTest(const std::string& args) {
 
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
-
         createProcessScreen(name, printsPerProcess);
 
-        std::cout << "Created process: " << name << "\n";
+        // Simulate delay between process creation
+        for (int j = 0; j < freq; ++j) {
+            cpu_timer_.tick();  // [ADDED]
+        }
     }
 }
 

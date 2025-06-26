@@ -1,14 +1,13 @@
 #include "CPUTimer.h"
 
-CPUTimer& CPUTimer::getInstance() {
-    static CPUTimer instance;
-    return instance;
+void CPUTimer::start() {
+    ticks = 0;
 }
 
 void CPUTimer::tick() {
-    ++cpuCycles;
+    ++ticks;
 }
 
-unsigned long CPUTimer::getTicks() const {
-    return cpuCycles.load();
+unsigned long long CPUTimer::getTicks() const {
+    return ticks;
 }

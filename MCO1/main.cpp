@@ -1,12 +1,27 @@
 #include "CLI/CLI.h"
-
-using namespace std;
+#include <iostream>
 
 int main() {
+    Config config;
+    config.load("config.txt");
+
+	//debug output to verify configuration loading
+    std::cout << "Loaded configuration:\n";
+    for (const auto& [key, value] : config.getAll()) {
+        std::cout << key << " = " << value << "\n";
+    }
+  
+    try {
+        CLI cli(config);
+        cli.run();
+
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error initializing CLI: " << e.what() << "\n";
+        return 1;
+    }
+
     
-    CLI cli;    // create CLI object
-    cli.run();  
 
     return 0;
-
 }

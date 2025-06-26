@@ -5,14 +5,26 @@
 void Config::load(const std::string& filename) {
     std::ifstream file(filename);
     std::string line;
+
     while (std::getline(file, line)) {
         std::istringstream iss(line);
-        std::string key, value;
-        if (iss >> key >> value) {
+        std::string key;
+        if (iss >> key) {
+            std::string value;
+            std::getline(iss, value);
+            // Remove leading whitespace
+            value.erase(0, value.find_first_not_of(" \t"));
+
+            // Remove surrounding quotes if any
+            if (!value.empty() && value.front() == '"' && value.back() == '"') {
+                value = value.substr(1, value.size() - 2);
+            }
+
             parameters[key] = value;
         }
     }
 }
+
 
 int Config::getInt(const std::string& key) const {
     return std::stoi(parameters.at(key));

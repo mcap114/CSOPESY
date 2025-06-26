@@ -47,7 +47,7 @@ public:
     void executeNextInstruction(int coreId);     // for running 1 instruction per tick
 
     int getInstructionPointer() const { return instruction_ptr; }
-    int getInstructionCount() const { return instructions.size(); }
+    int getInstructionCount() const { return static_cast<int>(instructions.size()); }
     int getInstructionLine() const { return instruction_ptr; }
     void setSleepTicks(uint8_t ticks); //Added
 

@@ -5,10 +5,16 @@
 #include <memory>
 #include "ScreenManager.h"
 #include "FCFSScheduler.h"
+#include "RRScheduler.h"
+#include "BaseScheduler.h"
+#include "../Core/Config.h"
+#include "../Core/CPUTimer.h"             
+#include "../Utilities/ReportGenerator.h"
 
 class CLI {
 public:
     CLI();
+	CLI(const Config& config);
     ~CLI();
     void run();
 
@@ -16,13 +22,16 @@ public:
 
 private:
     bool is_initialized_ = false;
+	Config config_; 
 
     // State tracking
     int next_process_id_ = 1;
     AppState current_state_;
     std::string active_screen_name_;
     ScreenManager screen_manager_;
-    std::unique_ptr<FCFSScheduler> scheduler_;
+    std::unique_ptr<BaseScheduler> scheduler_;
+    CPUTimer cpu_timer_;
+    std::unique_ptr<ReportGenerator> report_gen_;
 
     // Command map with argument support
     std::unordered_map<std::string, std::function<void(const std::string&)>> commands;

@@ -8,6 +8,7 @@
 #include <atomic>
 #include <unordered_map> 
 #include "Process.h"
+#include "BaseScheduler.h"
 
 // windows-specific thread initialization 
 #ifdef _WIN32
@@ -18,9 +19,9 @@
 #include <process.h>
 #endif
 
-class FCFSScheduler {
+class FCFSScheduler : public BaseScheduler {
 public:
-    explicit FCFSScheduler(unsigned int numCores = 4); // declare number of CPU cores here
+    FCFSScheduler(unsigned int numCores = 4, int delayPerExec = 10); 
     ~FCFSScheduler();
 
     // disable copying
@@ -36,8 +37,9 @@ private:
     void schedule();
     void workerLoop(unsigned int coreId);
 
-
     const unsigned int numCores;
+    const int delayPerExec;
+
     std::atomic<bool> running{ true };
 
     std::queue<std::shared_ptr<Process>> processQueue;

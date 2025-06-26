@@ -2,8 +2,8 @@
 #include <iostream>
 #include <chrono>
 
-FCFSScheduler::FCFSScheduler(unsigned int numCores)
-    : numCores(numCores),
+FCFSScheduler::FCFSScheduler(unsigned int numCores, int delayPerExec)
+    : numCores(numCores), delayPerExec(delayPerExec),
     workerQueues(numCores) {
 
     // lambdas to avoid direct member function pointer issues
@@ -13,7 +13,7 @@ FCFSScheduler::FCFSScheduler(unsigned int numCores)
         workerThreads.emplace_back([this, i] { this->workerLoop(i); });
     }
 
-    std::cout << "FCFS Scheduler initialized with " << numCores << " cores\n";
+    //std::cout << "FCFS Scheduler initialized with " << numCores << " cores\n";
 }
 
 FCFSScheduler::~FCFSScheduler() {
@@ -77,7 +77,7 @@ void FCFSScheduler::workerLoop(unsigned int coreId) {
 
             while (!process->isCompleted() && running) {
                 process->executeNextInstruction(coreId);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
             }
 
             // uncomment for real-time status updating, otherwise this gets in the way of screen -ls command

@@ -1,13 +1,10 @@
 #pragma once
-#include <atomic>
 
 class CPUTimer {
 public:
-    static CPUTimer& getInstance();
-    void tick();
-    unsigned long getTicks() const;
-
+    void start();
+    void tick(); // Simulate a CPU tick
+    unsigned long long getTicks() const;
 private:
-    CPUTimer() = default;
-    std::atomic<unsigned long> cpuCycles{ 0 };
+    unsigned long long ticks = 0;
 };
