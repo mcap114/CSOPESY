@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>  
 #include <ctime>    
+#include <vector> 
 
 class Process {
 public:

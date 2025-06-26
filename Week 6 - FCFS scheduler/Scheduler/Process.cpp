@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 Process::Process(const std::string& name, int totalPrints)
     : name(name), totalPrints(totalPrints) {
