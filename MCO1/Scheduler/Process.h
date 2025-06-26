@@ -8,7 +8,7 @@
 #include <vector> 
 #include <functional>
 #include <unordered_map>
-
+#include <cstdint>
 
 enum class InstructionType {
     DECLARE,
@@ -37,6 +37,8 @@ public:
     void setProcessId(int id) { process_id_ = id; }
     int getProcessId() const { return process_id_; }
 
+    int getTotalInstructions() const;
+
     using UpdateCallback = std::function<void(const std::string& name, int coreId, const std::string& progress)>;
 
     void setUpdateCallback(UpdateCallback cb);
@@ -47,7 +49,7 @@ public:
     int getInstructionPointer() const { return instruction_ptr; }
     int getInstructionCount() const { return instructions.size(); }
     int getInstructionLine() const { return instruction_ptr; }
-
+    void setSleepTicks(uint8_t ticks); //Added
 
 
 private:
@@ -61,6 +63,10 @@ private:
     std::vector<std::string> logs;
 
     std::string getCurrentTimestamp();
+
+    int instruction_line = 0;
+    uint8_t sleep_ticks_remaining = 0; //Added for sleep support
+    void simulateInstruction();
 
     std::vector<Instruction> instructions;
     std::unordered_map<std::string, uint16_t> variables;

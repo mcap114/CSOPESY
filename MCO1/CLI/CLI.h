@@ -39,7 +39,8 @@ private:
     void handleSchedulerStop(const std::string& args);
     void handleReportUtil(const std::string& args);
     void handleExit(const std::string& args);
-
+    void handleSleep(const std::string& args);
+    void handleFor(const std::string& args);
     // Helper functions
     void createProcessScreen(const std::string& processName, int totalPrints);
     bool parseScreenArgs(const std::string& args, char& mode, std::string& name);

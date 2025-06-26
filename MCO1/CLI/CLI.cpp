@@ -4,6 +4,8 @@
 #include <cstdlib> // for system()
 #include <sstream>
 #include <iomanip>
+#include <thread>   // For sleep
+#include <chrono>   // For milliseconds
 
 CLI::CLI() :
     current_state_(AppState::MAIN_MENU),
@@ -17,6 +19,9 @@ CLI::CLI() :
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
+
+    commands["sleep"] = [this](const std::string& args) { handleSleep(args); };
+    commands["for"] = [this](const std::string& args) { handleFor(args); };
 }
 
 CLI::~CLI() {
@@ -287,5 +292,27 @@ void CLI::handleExit(const std::string& args) {
     else {
         std::cout << "Exiting CSOPESY CLI Emulator. Goodbye!\n";
         exit(0);
+    }
+}
+
+void CLI::handleSleep(const std::string& args) {
+    try {
+        int duration_ms = std::stoi(args);
+        std::cout << "Sleeping for " << duration_ms << "ms...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
+        std::cout << "Awake.\n";
+    } catch (...) {
+        std::cout << "Invalid usage. Try: sleep 1000\n";
+    }
+}
+
+void CLI::handleFor(const std::string& args) {
+    try {
+        int count = std::stoi(args);
+        for (int i = 1; i <= count; ++i) {
+            std::cout << "Iteration " << i << " of " << count << "\n";
+        }
+    } catch (...) {
+        std::cout << "Invalid usage. Try: for 5\n";
     }
 }
