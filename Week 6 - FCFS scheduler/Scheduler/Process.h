@@ -6,6 +6,8 @@
 #include <sstream>  
 #include <ctime>    
 #include <vector> 
+#include <functional>
+
 
 class Process {
 public:
