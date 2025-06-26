@@ -17,6 +17,8 @@ CLI::CLI() :
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
+    commands["sleep"] = [this](const std::string& args) { handleSleepCommand(args); };
+    commands["for"] = [this](const std::string& args) { handleForCommand(args); };
 }
 
 CLI::~CLI() {
@@ -196,5 +198,59 @@ void CLI::handleExit(const std::string& args) {
     else {
         std::cout << "Exiting CSOPESY CLI Emulator. Goodbye!\n";
         exit(0);
+    }
+}
+
+void CLI::handleSleepCommand(const std::string& args) {
+    std::istringstream iss(args);
+    std::string name;
+    unsigned long ticks;
+    iss >> name >> ticks;
+
+    if (name.empty() || iss.fail()) {
+        std::cout << "Usage: sleep <processName> <ticks>\n";
+        return;
+    }
+
+    auto process = scheduler_->findProcess(name);
+    if (process) {
+        process->handleSleep(ticks);
+        std::cout << "Process " << name << " is now sleeping for " << ticks << " ticks.\n";
+    } else {
+        std::cout << "Process not found: " << name << "\n";
+    }
+}
+
+void CLI::handleForCommand(const std::string& args) {
+    std::istringstream iss(args);
+    std::string name;
+    int iterations;
+    std::string cmdList;
+
+    iss >> name >> iterations;
+    std::getline(iss, cmdList);
+
+    if (name.empty() || iterations <= 0 || cmdList.empty()) {
+        std::cout << "Usage: for <processName> <iterations> <cmd1;cmd2;...>\n";
+        return;
+    }
+
+    // Remove leading space from cmdList
+    if (!cmdList.empty() && cmdList[0] == ' ')
+        cmdList.erase(0, 1);
+
+    std::vector<std::string> commands;
+    std::stringstream ss(cmdList);
+    std::string cmd;
+    while (std::getline(ss, cmd, ';')) {
+        commands.push_back(cmd);
+    }
+
+    auto process = scheduler_->findProcess(name);
+    if (process) {
+        process->handleForLoop(commands, iterations);
+        std::cout << "Process " << name << " will repeat commands for " << iterations << " iterations.\n";
+    } else {
+        std::cout << "Process not found: " << name << "\n";
     }
 }

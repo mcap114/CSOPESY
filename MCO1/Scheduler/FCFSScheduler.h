@@ -19,20 +19,20 @@
 
 class FCFSScheduler {
 public:
-    explicit FCFSScheduler(unsigned int numCores = 4); // declare number of CPU cores here
+    explicit FCFSScheduler(unsigned int numCores = 4);
     ~FCFSScheduler();
 
-    // disable copying
     FCFSScheduler(const FCFSScheduler&) = delete;
     FCFSScheduler& operator=(const FCFSScheduler&) = delete;
 
     void addProcess(std::shared_ptr<Process> process);
     void shutdown();
 
+    std::shared_ptr<Process> findProcess(const std::string& name); // ✅ Make this public
+    
 private:
     void schedule();
     void workerLoop(unsigned int coreId);
-
 
     const unsigned int numCores;
     std::atomic<bool> running{ true };

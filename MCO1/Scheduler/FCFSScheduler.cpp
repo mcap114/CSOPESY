@@ -1,12 +1,12 @@
 #include "FCFSScheduler.h"
 #include <iostream>
 #include <chrono>
+#include "../Core/CPUTimer.h"
 
 FCFSScheduler::FCFSScheduler(unsigned int numCores)
     : numCores(numCores),
-    workerQueues(numCores) {
+      workerQueues(numCores) {
 
-    // lambdas to avoid direct member function pointer issues
     schedulerThread = std::thread([this] { this->schedule(); });
 
     for (unsigned int i = 0; i < numCores; ++i) {
@@ -33,7 +33,7 @@ void FCFSScheduler::schedule() {
         std::unique_lock<std::mutex> lock(queueMutex);
         cv.wait(lock, [this] {
             return !processQueue.empty() || !running;
-            });
+        });
 
         if (!running) break;
 
@@ -59,20 +59,16 @@ void FCFSScheduler::workerLoop(unsigned int coreId) {
         }
 
         if (process) {
-
             while (!process->isCompleted() && running) {
-                process->executePrint(coreId);
+                CPUTimer::tick();
+                process->step();
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
 
-            // uncomment for real-time status updating, otherwise this gets in the way of screen -ls command
-            if (running) {
-                //std::cout << "Process " << process->getName()
-                //    << " completed on core " << coreId << "\n";
-
-            }
-        }
-        else {
+            // optional: print when done
+            // std::cout << "Process " << process->getName()
+            //           << " completed on core " << coreId << "\n";
+        } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
@@ -93,4 +89,28 @@ void FCFSScheduler::shutdown() {
     }
 
     std::cout << "Scheduler shutdown complete\n";
+}
+
+// ✅ Implementation of findProcess()
+std::shared_ptr<Process> FCFSScheduler::findProcess(const std::string& name) {
+    std::lock_guard<std::mutex> lock(queueMutex);
+
+    // Search in global queue
+    std::queue<std::shared_ptr<Process>> tempQueue = processQueue;
+    while (!tempQueue.empty()) {
+        auto p = tempQueue.front();
+        tempQueue.pop();
+        if (p->getName() == name) return p;
+    }
+
+    // Search in all worker queues
+    for (const auto& q : workerQueues) {
+        std::queue<std::shared_ptr<Process>> temp = q;
+        while (!temp.empty()) {
+            auto p = temp.front();
+            temp.pop();
+            if (p->getName() == name) return p;
+        }
+    }
+    return nullptr;
 }
