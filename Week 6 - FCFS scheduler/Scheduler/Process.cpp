@@ -1,24 +1,23 @@
 #include "Process.h"
 #include <chrono>
 #include <iomanip>
-#include <filesystem>
 #include <iostream>
 
 Process::Process(const std::string& name, int totalPrints)
     : name(name), totalPrints(totalPrints) {
 
-    // directory creation
-    std::string logPath = "logs/" + name + "_logs.txt";  
-    std::cout << "Creating log file at: " << std::filesystem::absolute(name + "_logs.txt") << "\n";
-    std::filesystem::create_directory("logs");
-    logFile.open(logPath);
 }
 
 void Process::executePrint(int coreId) {
     assignedCore = coreId;
-    logFile << "[ ] (" << getCurrentTimestamp() << ") Core:" << coreId
-        << " \"Hello world from " << name << "!\"\n";
+    std::string msg = "[" + getCurrentTimestamp() + "] Core:" +
+                      std::to_string(coreId) + " \"Hello world from " + name + "!\"";
+    logs.push_back(msg);  
     printsCompleted++;
+}
+
+const std::vector<std::string>& Process::getLogs() const {
+    return logs;
 }
 
 bool Process::isCompleted() const {

@@ -80,3 +80,12 @@ std::string ScreenManager::listScreens() const {
     oss << "╰--------------------------------------╯\n";
     return oss.str();
 }
+
+Screen* ScreenManager::getScreen(const std::string& name) {
+    std::lock_guard<std::mutex> lock(screen_mutex_);
+    auto it = screens_.find(name);
+    if (it != screens_.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
