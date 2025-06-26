@@ -52,6 +52,7 @@ void CLI::run() {
                         std::cout << "\nProcess Name: " << it->name << "\n";
                         std::cout << "Process ID: " << it->id << "\n";
                         
+                        std::cout << "Core #: " << it->core << "\n";
                         std::cout << "Logs:\n";
                         for (const auto& log : proc->getLogs()) {
                             std::cout << log << "\n";
@@ -216,6 +217,10 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
 
     info.instruction_line = 0;
     info.total_instructions = totalPrints;
+
+    proc->setUpdateCallback([this](const std::string& pname, int coreId, const std::string& progress) {
+        screen_manager_.updateProcess(pname, pname, "RUNNING", coreId, progress);
+    });
 
     screen_manager_.addProcess(processName, info);
 }

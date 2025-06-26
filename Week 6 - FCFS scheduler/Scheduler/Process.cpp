@@ -9,12 +9,22 @@ Process::Process(const std::string& name, int totalPrints)
 
 }
 
+void Process::setUpdateCallback(UpdateCallback cb) {
+    updateCallback = std::move(cb);
+}
+
+
 void Process::executePrint(int coreId) {
     assignedCore = coreId;
     std::string msg = "[" + getCurrentTimestamp() + "] Core:" +
                       std::to_string(coreId) + " \"Hello world from " + name + "!\"";
     logs.push_back(msg);  
     printsCompleted++;
+
+    if (updateCallback) {
+        std::string progress = std::to_string(printsCompleted) + "/" + std::to_string(totalPrints);
+        updateCallback(name, coreId, progress);
+    }
 }
 
 const std::vector<std::string>& Process::getLogs() const {
