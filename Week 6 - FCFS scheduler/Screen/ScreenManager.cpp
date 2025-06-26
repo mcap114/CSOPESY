@@ -60,26 +60,55 @@ void ScreenManager::removeProcess(const std::string& screen_name, const std::str
 std::string ScreenManager::listScreens() const {
     std::lock_guard<std::mutex> lock(screen_mutex_);
     std::ostringstream oss;
-             
-    oss << "╭--------------------------------------╮\n"
-        << "│ ACTIVE PROCESSES (screen -r NAME)    │\n"
-        << "├--------------------------------------┤\n";
 
-    if (screens_.empty()) {
-        oss << "│ No active processes                 │\n";
-    }
-    else {
-        for (const auto& [name, screen] : screens_) {
-            std::string status = screen->isRunning() ? "RUNNING" : "FINISHED";
-            oss << "║ " << std::left << std::setw(26) << name
-                << " │ " << std::setw(15) << "FINISHED" << " ║\n";
+    // Placeholder CPU stats (customize later if needed)
+    int total_cores = 4;
+    int used_cores = 4;
+    int available_cores = total_cores - used_cores;
+    int utilization = (used_cores * 100) / total_cores;
+
+    oss << "CPU utilization: " << utilization << "%\n";
+    oss << "Cores used: " << used_cores << "\n";
+    oss << "Cores available: " << available_cores << "\n\n";
+
+    // Split processes into running and finished
+    std::vector<ProcessInfo> running;
+    std::vector<ProcessInfo> finished;
+
+    for (const auto& [name, screen] : screens_) {
+        const auto& processes = screen->getProcesses();
+        if (!processes.empty()) {
+            const auto& proc = processes[0];
+            if (proc.instruction_line >= proc.total_instructions) {
+                finished.push_back(proc);
+            } else {
+                running.push_back(proc);
+            }
         }
-
     }
 
-    oss << "╰--------------------------------------╯\n";
+    // Running section
+    oss << "------------------------------------------------------------\n";
+    oss << "Running processes:\n";
+    for (const auto& proc : running) {
+        oss << proc.name
+            << "\t(" << proc.creation_time << ")"
+            << "\tCore: " << proc.core
+            << "\t" << proc.instruction_line << " / " << proc.total_instructions << "\n";
+    }
+
+    // Finished section
+    oss << "\nFinished processes:\n";
+    for (const auto& proc : finished) {
+        oss << proc.name
+            << "\t(" << proc.creation_time << ")"
+            << "\tFinished"
+            << "\t" << proc.total_instructions << " / " << proc.total_instructions << "\n";
+    }
+
     return oss.str();
 }
+
 
 Screen* ScreenManager::getScreen(const std::string& name) {
     std::lock_guard<std::mutex> lock(screen_mutex_);
