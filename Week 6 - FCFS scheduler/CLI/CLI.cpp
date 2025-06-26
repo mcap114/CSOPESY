@@ -40,7 +40,32 @@ void CLI::run() {
                 continue;
             }
             else if (input == "process-smi") {
-                std::cout << screen_manager_.renderScreen(active_screen_name_);
+                auto proc = scheduler_->getProcess(active_screen_name_);
+                auto screen = screen_manager_.getScreen(active_screen_name_);
+                if (proc && screen) {
+                    // get process info from screen
+                    const auto& procs = screen->getProcesses();
+                    auto it = std::find_if(procs.begin(), procs.end(), [&](const ProcessInfo& p) {
+                        return p.name == active_screen_name_;
+                    });
+                    if (it != procs.end()) {
+                        std::cout << "\nProcess Name: " << it->name << "\n";
+                        std::cout << "Process ID: " << it->id << "\n";
+                        
+                        std::cout << "Logs:\n";
+                        for (const auto& log : proc->getLogs()) {
+                            std::cout << log << "\n";
+                        }
+
+                        std::cout << "\nCurrent Instruction Line: " << it->instruction_line << "\n";
+                        std::cout << "Lines of Code: " << it->total_instructions << "\n";
+                    } else {
+                        std::cout << "Process info not found in screen.\n";
+                    }
+                } else {
+                    std::cout << "Process or screen not found.\n";
+                }
+                std::cout << "\nroot:\\> ";
             }
             else {
                 std::cout << "Unrecognized command in screen. Type 'process-smi' or 'exit'.\n";
@@ -171,9 +196,14 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     // Create or focus the screen
     screen_manager_.createOrFocusScreen(processName, true);
 
+    int procId = next_process_id_++;
+    auto proc = std::make_shared<Process>(processName, totalPrints);
+    proc->setProcessId(procId);  
+    scheduler_->addProcess(proc);
+
     // Add process info to the screen
     ProcessInfo info;
-    info.id = next_process_id_++;
+    info.id = procId;
     info.name = processName;
     info.status = "RUNNING";
     info.core = -1; // Will be updated when assigned

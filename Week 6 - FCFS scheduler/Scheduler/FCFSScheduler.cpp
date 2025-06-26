@@ -24,8 +24,18 @@ void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         processQueue.push(process);
+        processMap[process->getName()] = process; 
     }
     cv.notify_one();
+}
+
+std::shared_ptr<Process> FCFSScheduler::getProcess(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    auto it = processMap.find(name);
+    if (it != processMap.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
 
 void FCFSScheduler::schedule() {

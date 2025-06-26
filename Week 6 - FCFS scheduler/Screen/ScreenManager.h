@@ -29,6 +29,8 @@ public:
     // Listing functionality
     std::string listScreens() const;
 
+    Screen* getScreen(const std::string& name);
+
 private:
     std::unordered_map<std::string, std::unique_ptr<Screen>> screens_;
     std::vector<ProcessDisplayInfo> completed_processes_; // tracks COMPLETED
