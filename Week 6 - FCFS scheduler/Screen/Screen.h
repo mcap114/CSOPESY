@@ -34,7 +34,7 @@ public:
 
     // Process management
     void addProcess(const ProcessInfo& process);
-    void updateProcess(const std::string& process_name, const std::string& status, int core, const std::string& progress);
+    void updateProcess(const std::string& process_name, const std::string& status, int core, const std::string& progress, int instructionLine);
     void removeProcess(const std::string& process_name);
    
 

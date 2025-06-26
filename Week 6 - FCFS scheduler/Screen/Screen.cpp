@@ -22,7 +22,7 @@ void Screen::addProcess(const ProcessInfo& process) {
 }
 
 void Screen::updateProcess(const std::string& process_name, const std::string& status,
-    int core, const std::string& progress) {
+    int core, const std::string& progress, int instructionLine) {
     std::lock_guard<std::mutex> lock(process_mutex_);
     auto it = std::find_if(processes_.begin(), processes_.end(),
         [&](const ProcessInfo& p) { return p.name == process_name; });
@@ -31,6 +31,7 @@ void Screen::updateProcess(const std::string& process_name, const std::string& s
         it->status = status;
         it->core = core;
         it->progress = progress;
+        it->instruction_line = instructionLine;
     }
 }
 

@@ -4,6 +4,8 @@
 #include <cstdlib> // for system()
 #include <sstream>
 #include <iomanip>
+#include <thread>   // For sleep
+#include <chrono>   // For milliseconds
 
 CLI::CLI() :
     current_state_(AppState::MAIN_MENU),
@@ -17,6 +19,10 @@ CLI::CLI() :
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
+
+    // Newly added commands
+    commands["sleep"] = [this](const std::string& args) { handleSleep(args); };
+    commands["for"] = [this](const std::string& args) { handleFor(args); };
 }
 
 CLI::~CLI() {
@@ -51,13 +57,11 @@ void CLI::run() {
                     if (it != procs.end()) {
                         std::cout << "\nProcess Name: " << it->name << "\n";
                         std::cout << "Process ID: " << it->id << "\n";
-                        
                         std::cout << "Core #: " << it->core << "\n";
                         std::cout << "Logs:\n";
                         for (const auto& log : proc->getLogs()) {
                             std::cout << log << "\n";
                         }
-
                         std::cout << "\nCurrent Instruction Line: " << it->instruction_line << "\n";
                         std::cout << "Lines of Code: " << it->total_instructions << "\n";
                     } else {
@@ -107,7 +111,6 @@ void CLI::printHeader(bool show_prompt) {
 
     std::cout << "Hello, Welcome to CSOPESY commandline!\n";
     std::cout << "Type 'exit' to quit, 'clear' to clear the screen\n";
-
 }
 
 void CLI::clearScreen() {
@@ -138,11 +141,10 @@ void CLI::handleInitialize(const std::string& args) {
 
 void CLI::handleScreen(const std::string& args) {
     if (args == "-ls") {
-       
         std::cout << screen_manager_.listScreens();
         return;
     }
-    
+
     char mode;
     std::string name;
     if (!parseScreenArgs(args, mode, name)) {
@@ -155,12 +157,9 @@ void CLI::handleScreen(const std::string& args) {
         return;
     }
 
-    // only 'screen -s' creates new screen
     if (mode == 's') {
-        
         int totalPrints = 50;
         createProcessScreen(name, totalPrints);
-
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
         clearScreen();
@@ -171,7 +170,6 @@ void CLI::handleScreen(const std::string& args) {
             std::cout << "Process " << name << " not found. Need to be initialized via screen -s " << name << "\n";
             return;
         }
-        
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
         clearScreen();
@@ -194,7 +192,6 @@ void CLI::returnToMainMenu() {
 }
 
 void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
-    // Create or focus the screen
     screen_manager_.createOrFocusScreen(processName, true);
 
     int procId = next_process_id_++;
@@ -202,14 +199,13 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     proc->setProcessId(procId);  
     scheduler_->addProcess(proc);
 
-    // Add process info to the screen
     ProcessInfo info;
     info.id = procId;
     info.name = processName;
     info.status = "RUNNING";
-    info.core = -1; // Will be updated when assigned
+    info.core = -1; 
     info.progress = "0/" + std::to_string(totalPrints);
-    
+
     std::time_t now = std::time(nullptr);
     char buffer[20];
     std::strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S", std::localtime(&now));
@@ -218,8 +214,8 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     info.instruction_line = 0;
     info.total_instructions = totalPrints;
 
-    proc->setUpdateCallback([this](const std::string& pname, int coreId, const std::string& progress) {
-        screen_manager_.updateProcess(pname, pname, "RUNNING", coreId, progress);
+    proc->setUpdateCallback([this](const std::string& pname, int coreId, const std::string& progress, int instructionLine) {
+    screen_manager_.updateProcess(pname, pname, "RUNNING", coreId, progress, instructionLine);
     });
 
     screen_manager_.addProcess(processName, info);
@@ -229,7 +225,6 @@ void CLI::handleSchedulerTest(const std::string& args) {
     int numProcesses = 10;
     int printsPerProcess = 100;
 
-    // Parse arguments if provided
     std::istringstream iss(args);
     if (!args.empty()) {
         iss >> numProcesses >> printsPerProcess;
@@ -239,13 +234,8 @@ void CLI::handleSchedulerTest(const std::string& args) {
 
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
-
-        // 1. Create the process
         scheduler_->addProcess(std::make_shared<Process>(name, printsPerProcess));
-
-        // 2. Auto-create its screen
         createProcessScreen(name, printsPerProcess);
-
         std::cout << "Created process: " << name << "\n";
     }
 }
@@ -254,14 +244,12 @@ void CLI::handleSchedulerStop(const std::string& args) {
     std::cout << "Stopping scheduler...\n";
     scheduler_->shutdown();
     std::cout << "Scheduler stopped\n";
-    // reinitialize scheduler for future use
     scheduler_ = std::make_unique<FCFSScheduler>(4);
 }
 
 void CLI::handleReportUtil(const std::string& args) {
     std::cout << "Scheduler Utilization Report:\n";
     std::cout << "---------------------------\n";
-    // TODO: add actual utilization reporting logic here
     std::cout << "Processes completed: [implement reporting]\n";
     std::cout << "Current queue size: [implement reporting]\n";
 }
@@ -280,5 +268,30 @@ void CLI::handleExit(const std::string& args) {
     else {
         std::cout << "Exiting CSOPESY CLI Emulator. Goodbye!\n";
         exit(0);
+    }
+}
+
+// ===============================
+// ✅ New Handlers Below
+// ===============================
+void CLI::handleSleep(const std::string& args) {
+    try {
+        int duration_ms = std::stoi(args);
+        std::cout << "Sleeping for " << duration_ms << "ms...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
+        std::cout << "Awake.\n";
+    } catch (...) {
+        std::cout << "Invalid usage. Try: sleep 1000\n";
+    }
+}
+
+void CLI::handleFor(const std::string& args) {
+    try {
+        int count = std::stoi(args);
+        for (int i = 1; i <= count; ++i) {
+            std::cout << "Iteration " << i << " of " << count << "\n";
+        }
+    } catch (...) {
+        std::cout << "Invalid usage. Try: for 5\n";
     }
 }
