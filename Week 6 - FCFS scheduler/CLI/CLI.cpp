@@ -208,7 +208,12 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     info.status = "RUNNING";
     info.core = -1; // Will be updated when assigned
     info.progress = "0/" + std::to_string(totalPrints);
-    info.creation_time = ""; // Will auto-populate
+    
+    std::time_t now = std::time(nullptr);
+    char buffer[20];
+    std::strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S", std::localtime(&now));
+    info.creation_time = buffer;
+
     info.instruction_line = 0;
     info.total_instructions = totalPrints;
 
