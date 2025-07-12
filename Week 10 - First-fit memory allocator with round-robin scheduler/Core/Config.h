@@ -13,7 +13,11 @@ public:
         return parameters;
     }
 
+    const std::vector<std::string>& getOrder() const {
+        return order;
+    }
 
 private:  
     std::unordered_map<std::string, std::string> parameters;  
+    std::vector<std::string> order;
 };

@@ -7,10 +7,10 @@ int main() {
 
 	//debug output to verify configuration loading
     std::cout << "Loaded configuration:\n";
-    for (const auto& [key, value] : config.getAll()) {
-        std::cout << key << " = " << value << "\n";
+    for (const auto& key : config.getOrder()) {
+        std::cout << key << " = " << config.getString(key) << "\n";
     }
-  
+
     try {
         CLI cli(config);
         cli.run();
