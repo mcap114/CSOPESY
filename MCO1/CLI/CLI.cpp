@@ -248,7 +248,7 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
     int delay = config_.getInt("delay-per-exec");      // [CONFIG UPDATE]
     int instructionCount = minIns + (rand() % (maxIns - minIns + 1));
 
-    auto proc = std::make_shared<Process>(processName, instructionCount);
+    auto proc = std::make_shared<OsProcess>(processName, instructionCount);
     proc->setProcessId(procId);  
 
     //int instructionCount = rand() % 6 + 5; // random between 5 and 10

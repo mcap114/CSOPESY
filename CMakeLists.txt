@@ -11,36 +11,64 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
 endif()
 
-# Configure output
+# Configure output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Screen library
+# === CORE LIBRARY ===
+add_library(Core
+    "MCO1/Core/Config.cpp"
+    "MCO1/Core/CPUTimer.cpp"
+)
+
+target_include_directories(Core PUBLIC
+    "MCO1/Core"
+)
+
+# === UTILITIES LIBRARY ===
+add_library(Utilities
+    "MCO1/Utilities/ReportGenerator.cpp"
+)
+
+target_include_directories(Utilities PUBLIC
+    "MCO1/Utilities"
+)
+
+# === SCREEN LIBRARY ===
 add_library(Screen
     "MCO1/Screen/Screen.cpp"
     "MCO1/Screen/ScreenManager.cpp"
- "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
+)
 
-# Scheduler library
+target_include_directories(Screen PUBLIC
+    "MCO1/Screen"
+)
+
+# === SCHEDULER LIBRARY ===
 add_library(Scheduler
-    "MCO1/Scheduler/Process.cpp"
+    "MCO1/Scheduler/OSProcess.cpp"
     "MCO1/Scheduler/FCFSScheduler.cpp"
- "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
+    "MCO1/Scheduler/RRScheduler.cpp"
+)
 
-# Main executable
+target_include_directories(Scheduler PUBLIC
+    "MCO1/Scheduler"
+)
+
+# === MAIN EXECUTABLE ===
 add_executable(csopesy_emulator
     "MCO1/main.cpp"
     "MCO1/CLI/CLI.cpp"
- "MCO1/Scheduler/BaseScheduler.h" "MCO1/Core/Config.h" "MCO1/Core/Config.cpp" "MCO1/Core/CPUTimer.cpp" "MCO1/Core/CPUTimer.h" "MCO1/Scheduler/RRScheduler.h" "MCO1/Scheduler/RRScheduler.cpp" "MCO1/Utilities/ReportGenerator.h" "MCO1/Utilities/ReportGenerator.cpp")
+)
 
-# Link dependencies
-target_link_libraries(csopesy_emulator PRIVATE 
+# === LINK ALL LIBRARIES TO MAIN EXECUTABLE ===
+target_link_libraries(csopesy_emulator PRIVATE
+    Core
+    Utilities
     Screen
     Scheduler
 )
 
-# Include directories
+# === INCLUDE DIRECTORIES FOR CLI ===
 target_include_directories(csopesy_emulator PRIVATE
     "MCO1/CLI"
-    "MCO1/Screen"
-    "MCO1/Scheduler"
 )

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <queue>
 #include <vector>
 #include <thread>
@@ -7,17 +7,8 @@
 #include <memory>
 #include <atomic>
 #include <unordered_map>
-#include "Process.h"
+#include "OsProcess.h"       // ✅ Updated include
 #include "BaseScheduler.h"
-
-// windows-specific thread initialization 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <process.h>
-#endif
 
 class RRScheduler : public BaseScheduler {
 public:
@@ -27,10 +18,10 @@ public:
     RRScheduler(const RRScheduler&) = delete;
     RRScheduler& operator=(const RRScheduler&) = delete;
 
-    void addProcess(std::shared_ptr<Process> process);
+    void addProcess(std::shared_ptr<OsProcess> process);      // ✅ Updated type
     void shutdown();
 
-    std::shared_ptr<Process> getProcess(const std::string& name) const;
+    std::shared_ptr<OsProcess> getProcess(const std::string& name) const;  // ✅ Updated type
 
 private:
     void workerLoop(unsigned int coreId);
@@ -41,8 +32,8 @@ private:
 
     std::atomic<bool> running{ true };
 
-    std::queue<std::shared_ptr<Process>> processQueue;
-    std::unordered_map<std::string, std::shared_ptr<Process>> processMap;
+    std::queue<std::shared_ptr<OsProcess>> processQueue;  // ✅ Updated type
+    std::unordered_map<std::string, std::shared_ptr<OsProcess>> processMap; // ✅ Updated type
 
     mutable std::mutex queueMutex;
     std::condition_variable cv;
