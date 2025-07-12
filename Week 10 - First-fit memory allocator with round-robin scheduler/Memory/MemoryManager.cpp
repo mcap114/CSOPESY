@@ -7,20 +7,19 @@ MemoryManager::MemoryManager(uint32_t totalMemory, uint32_t memPerProc)
 }
 
 bool MemoryManager::allocate(const std::string& processName) {
-    for (auto& block : blocks_) {
-        if (block.free && block.size >= memPerProc_) {
-            if (block.size > memPerProc_) {
-                // split block
-                MemoryBlock newBlock = { block.start + memPerProc_, block.size - memPerProc_, true, "" };
-                block.size = memPerProc_;
-                blocks_.insert(blocks_.begin() + (&block - &blocks_[0]) + 1, newBlock);
+    for (size_t i = 0; i < blocks_.size(); ++i) {
+        if (blocks_[i].free && blocks_[i].size >= memPerProc_) {
+            if (blocks_[i].size > memPerProc_) {
+                MemoryBlock newBlock = { blocks_[i].start + memPerProc_, blocks_[i].size - memPerProc_, true, "" };
+                blocks_[i].size = memPerProc_;
+                blocks_.insert(blocks_.begin() + i + 1, newBlock);
             }
-            block.free = false;
-            block.processName = processName;
+            blocks_[i].free = false;
+            blocks_[i].processName = processName;
             return true;
         }
     }
-    return false; // no sufficient block found
+    return false;
 }
 
 

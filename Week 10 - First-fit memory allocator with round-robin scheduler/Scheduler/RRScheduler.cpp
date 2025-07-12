@@ -44,6 +44,33 @@ void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {
     cv.notify_all();
 }
 
+// DEBUG MODE ADDPROCESS
+/*
+void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+
+        if (!process) {
+            std::cout << "[ERROR] Null process pointer passed to addProcess!" << std::endl;
+            return;
+        }
+
+        std::cout << "[DEBUG] Adding process: " << process->getName() << std::endl;
+
+        // attempt allocation 
+        if (!memoryManager->allocate(process->getName())) {
+
+            // allocation failed: requeue at tail without allocating
+            processQueue.push(process);
+            return;
+        }
+        processQueue.push(process);
+        processMap[process->getName()] = process;
+    }
+    cv.notify_all();
+}
+*/
+
 std::shared_ptr<OsProcess> RRScheduler::getProcess(const std::string& name) const { 
     std::lock_guard<std::mutex> lock(queueMutex);
     auto it = processMap.find(name);
@@ -78,10 +105,10 @@ void RRScheduler::workerLoop(unsigned int coreId) {
                 process->executeNextInstruction(coreId);
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
                 executed++;
+            }
 
-                if (++quantumCycleCounter % quantumCycles == 0) {
-                    takeMemorySnapshot();
-                }
+            if (running && ++quantumCycleCounter % quantumCycles == 0) {
+                takeMemorySnapshot();
             }
 
             if (!process->isCompleted() && running) {
