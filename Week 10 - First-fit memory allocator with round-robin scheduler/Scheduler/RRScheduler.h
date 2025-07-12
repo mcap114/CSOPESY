@@ -7,7 +7,7 @@
 #include <memory>
 #include <atomic>
 #include <unordered_map>
-#include "OsProcess.h"       
+#include "OSProcess.h"
 #include "BaseScheduler.h"
 #include "../Memory/MemoryManager.h"
 
