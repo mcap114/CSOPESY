@@ -14,51 +14,57 @@ endif()
 # Configure output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# === CORE LIBRARY ===
-add_library(Core
-    "MCO1/Core/Config.cpp"
-    "MCO1/Core/CPUTimer.cpp"
- "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.h" "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/BaseScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.h")
+# === FILE GROUPINGS ===
 
+file(GLOB_RECURSE CORE_SRC
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Core/*.cpp"
+)
+
+file(GLOB_RECURSE UTILITIES_SRC
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/*.cpp"
+)
+
+file(GLOB_RECURSE SCREEN_SRC
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/*.cpp"
+)
+
+file(GLOB_RECURSE SCHEDULER_SRC
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/*.cpp"
+)
+
+file(GLOB_RECURSE CLI_SRC
+    "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/*.cpp"
+)
+
+# === CORE LIBRARY ===
+add_library(Core ${CORE_SRC} "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.cpp")
 target_include_directories(Core PUBLIC
-    "MCO1/Core"
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Core"
 )
 
 # === UTILITIES LIBRARY ===
-add_library(Utilities
-    "MCO1/Utilities/ReportGenerator.cpp"
- "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.h" "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/BaseScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.h")
-
+add_library(Utilities ${UTILITIES_SRC} "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.cpp")
 target_include_directories(Utilities PUBLIC
-    "MCO1/Utilities"
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities"
 )
 
 # === SCREEN LIBRARY ===
-add_library(Screen
-    "MCO1/Screen/Screen.cpp"
-    "MCO1/Screen/ScreenManager.cpp"
- "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.h" "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/BaseScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.h")
-
+add_library(Screen ${SCREEN_SRC} "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.cpp")
 target_include_directories(Screen PUBLIC
-    "MCO1/Screen"
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Screen"
 )
 
 # === SCHEDULER LIBRARY ===
-add_library(Scheduler
-    "MCO1/Scheduler/OSProcess.cpp"
-    "MCO1/Scheduler/FCFSScheduler.cpp"
-    "MCO1/Scheduler/RRScheduler.cpp"
- "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.h" "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/BaseScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.h")
-
+add_library(Scheduler ${SCHEDULER_SRC} "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.cpp")
 target_include_directories(Scheduler PUBLIC
-    "MCO1/Scheduler"
+    "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler"
 )
 
 # === MAIN EXECUTABLE ===
 add_executable(csopesy_emulator
-    "MCO1/main.cpp"
-    "MCO1/CLI/CLI.cpp"
- "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/CLI/CLI.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/Config.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Core/CPUTimer.h" "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/BaseScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/FCFSScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/OSProcess.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Scheduler/RRScheduler.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/Screen.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Screen/ScreenManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.cpp" "Week 10 - First-fit memory allocator with round-robin scheduler/Utilities/ReportGenerator.h")
+    ${CLI_SRC}
+    "Week 10 - First-fit memory allocator with round-robin scheduler/main.cpp"
+ "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.h" "Week 10 - First-fit memory allocator with round-robin scheduler/Memory/MemoryManager.cpp")
 
 # === LINK ALL LIBRARIES TO MAIN EXECUTABLE ===
 target_link_libraries(csopesy_emulator PRIVATE
@@ -70,5 +76,5 @@ target_link_libraries(csopesy_emulator PRIVATE
 
 # === INCLUDE DIRECTORIES FOR CLI ===
 target_include_directories(csopesy_emulator PRIVATE
-    "MCO1/CLI"
+    "Week 10 - First-fit memory allocator with round-robin scheduler/CLI"
 )

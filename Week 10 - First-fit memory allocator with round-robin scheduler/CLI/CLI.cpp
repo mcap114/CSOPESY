@@ -43,7 +43,7 @@ CLI::CLI(const Config& config)
 
     if (scheduler_type == "rr") {
         int quantum = config_.getInt("quantum-cycles");
-        scheduler_ = std::make_unique<RRScheduler>(num_cores, quantum);
+        scheduler_ = std::make_unique<RRScheduler>(num_cores, quantum, delay, maxMem, memPerProc);
     }
     else if (scheduler_type == "fcfs") {
         scheduler_ = std::make_unique<FCFSScheduler>(num_cores,delay);

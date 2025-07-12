@@ -11,8 +11,10 @@
 #include <process.h>
 #endif
 
-RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerExec)
+RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerExec, int maxOverallMem, int memPerProc)
     : numCores(numCores), quantumCycles(quantumCycles), delayPerExec(delayPerExec) {
+
+    memoryManager = std::make_unique<MemoryManager>(maxOverallMem, memPerProc);
 
     for (unsigned int i = 0; i < numCores; ++i) {
         workerThreads.emplace_back([this, i] { this->workerLoop(i); });
@@ -25,7 +27,7 @@ RRScheduler::~RRScheduler() {
     shutdown();
 }
 
-void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  // ✅ Updated type
+void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         processQueue.push(process);
@@ -34,7 +36,7 @@ void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  // ✅ Updat
     cv.notify_all();
 }
 
-std::shared_ptr<OsProcess> RRScheduler::getProcess(const std::string& name) const { // ✅ Updated type
+std::shared_ptr<OsProcess> RRScheduler::getProcess(const std::string& name) const { 
     std::lock_guard<std::mutex> lock(queueMutex);
     auto it = processMap.find(name);
     if (it != processMap.end()) {
@@ -45,7 +47,7 @@ std::shared_ptr<OsProcess> RRScheduler::getProcess(const std::string& name) cons
 
 void RRScheduler::workerLoop(unsigned int coreId) {
     while (running) {
-        std::shared_ptr<OsProcess> process = nullptr;  // ✅ Updated type
+        std::shared_ptr<OsProcess> process = nullptr;  
 
         {
             std::unique_lock<std::mutex> lock(queueMutex);
