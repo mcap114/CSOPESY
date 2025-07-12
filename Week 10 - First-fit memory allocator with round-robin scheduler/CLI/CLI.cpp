@@ -34,6 +34,9 @@ CLI::CLI(const Config& config)
     int num_cores = config_.getInt("num-cpu");
     int delay = config_.getInt("delay-per-exec");
     int quantum = config.getInt("quantum-cycles");
+    int maxMem = config_.getInt("max-overall-mem");
+    int memPerFrame = config_.getInt("mem-per-frame");
+    int memPerProc = config_.getInt("mem-per-proc");
 
     cpu_timer_.start(); 
     report_gen_ = std::make_unique<ReportGenerator>(num_cores); 
