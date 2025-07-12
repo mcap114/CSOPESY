@@ -71,8 +71,8 @@ std::string ScreenManager::listScreens() const {
     std::ostringstream oss;
 
     // Placeholder CPU stats (customize later if needed)
-    int total_cores = 4;
-    int used_cores = 4;
+    int total_cores = 2;
+    int used_cores = 2;
     int available_cores = total_cores - used_cores;
     int utilization = (used_cores * 100) / total_cores;
 
