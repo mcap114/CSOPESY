@@ -30,6 +30,14 @@ RRScheduler::~RRScheduler() {
 void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  
     {
         std::lock_guard<std::mutex> lock(queueMutex);
+
+        // attempt allocation 
+        if (!memoryManager->allocate(process->getName())) {
+
+            // allocation failed: requeue at tail without allocating
+            processQueue.push(process);
+            return;
+        }
         processQueue.push(process);
         processMap[process->getName()] = process;
     }
@@ -70,6 +78,10 @@ void RRScheduler::workerLoop(unsigned int coreId) {
                 process->executeNextInstruction(coreId);
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
                 executed++;
+
+                if (++quantumCycleCounter % quantumCycles == 0) {
+                    takeMemorySnapshot();
+                }
             }
 
             if (!process->isCompleted() && running) {
@@ -77,9 +89,45 @@ void RRScheduler::workerLoop(unsigned int coreId) {
                 processQueue.push(process); // put it back at the end
                 cv.notify_all();
             }
+
+            if (process->isCompleted()) {
+                memoryManager->deallocate(process->getName());
+            }
         }
     }
 }
+
+void RRScheduler::takeMemorySnapshot() {  
+    uint32_t totalMemory = memoryManager->getTotalMemory(); 
+    uint32_t addr = totalMemory;  
+
+    std::string filename = "memory_stamp_" + std::to_string(quantumCycleCounter) + ".txt";  
+    std::ofstream file(filename);  
+
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());  
+    file << "Timestamp: (" << std::ctime(&now) << ")\n";  
+
+    auto snapshot = memoryManager->getMemorySnapshot();  
+    int procCount = 0;  
+    for (const auto& block : snapshot) {  
+        if (!block.free) procCount++;  
+    }  
+    file << "Number of processes in memory: " << procCount << "\n";  
+    file << "Total external fragmentation in KB: " << memoryManager->calculateExternalFragmentation() / 1024 << "\n\n";  
+
+    file << "---end--- = " << addr << "\n";  
+    for (auto it = snapshot.rbegin(); it != snapshot.rend(); ++it) {  
+        if (!it->free) {  
+            file << it->processName << "\n";  
+        }  
+        addr -= it->size;  
+        file << addr << "\n";  
+    }  
+    file << "---start--- = 0\n";  
+    file.close();  
+}
+
+
 
 void RRScheduler::shutdown() {
     running = false;

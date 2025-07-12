@@ -1,81 +1,68 @@
 #include "MemoryManager.h"
-#include <fstream>
-#include <chrono>
-#include <ctime>
-#include <iomanip>
 
-MemoryManager::MemoryManager(int totalMemory, int memPerProc)
-    : totalMemory(totalMemory), memPerProc(memPerProc) {
+MemoryManager::MemoryManager(uint32_t totalMemory, uint32_t memPerProc)
+    : totalMemory_(totalMemory), memPerProc_(memPerProc) {
+
+    blocks_.push_back({ 0, totalMemory, true, "" }); // entire memory is free initially
 }
 
-bool MemoryManager::allocateProcess(std::shared_ptr<OsProcess> process) {
-    // First-fit search
-    int currentAddress = 0;
-    for (const auto& block : memoryBlocks) {
-        int gap = block.startAddress - currentAddress;
-        if (gap >= memPerProc) {
-            // Allocate here
-            memoryBlocks.insert(memoryBlocks.begin() + (&block - &memoryBlocks[0]), { currentAddress, memPerProc, process });
+bool MemoryManager::allocate(const std::string& processName) {
+    for (auto& block : blocks_) {
+        if (block.free && block.size >= memPerProc_) {
+            if (block.size > memPerProc_) {
+                // split block
+                MemoryBlock newBlock = { block.start + memPerProc_, block.size - memPerProc_, true, "" };
+                block.size = memPerProc_;
+                blocks_.insert(blocks_.begin() + (&block - &blocks_[0]) + 1, newBlock);
+            }
+            block.free = false;
+            block.processName = processName;
             return true;
         }
-        currentAddress = block.startAddress + block.size;
     }
-
-    // Check if space at the end
-    if (totalMemory - currentAddress >= memPerProc) {
-        memoryBlocks.push_back({ currentAddress, memPerProc, process });
-        return true;
-    }
-
-    // Not enough memory
-    return false;
+    return false; // no sufficient block found
 }
 
-void MemoryManager::deallocateProcess(std::shared_ptr<OsProcess> process) {
-    for (auto it = memoryBlocks.begin(); it != memoryBlocks.end(); ++it) {
-        if (it->owner == process) {
-            memoryBlocks.erase(it);
-            return;
+
+void MemoryManager::deallocate(const std::string& processName) {
+    for (auto& block : blocks_) {
+        if (!block.free && block.processName == processName) {
+            block.free = true;
+            block.processName = "";
+
+            // merge with next if free
+            auto it = &block - &blocks_[0];
+            if (it + 1 < blocks_.size() && blocks_[it + 1].free) {
+                block.size += blocks_[it + 1].size;
+                blocks_.erase(blocks_.begin() + it + 1);
+            }
+
+            // merge with prev if free
+            if (it > 0 && blocks_[it - 1].free) {
+                blocks_[it - 1].size += block.size;
+                blocks_.erase(blocks_.begin() + it);
+            }
+
+            break;
         }
     }
 }
 
-int MemoryManager::calculateExternalFragmentation() const {
-    int totalFragmentation = 0;
-    int currentAddress = 0;
-
-    for (const auto& block : memoryBlocks) {
-        int gap = block.startAddress - currentAddress;
-        if (gap > 0) totalFragmentation += gap;
-        currentAddress = block.startAddress + block.size;
-    }
-
-    // Check end gap
-    if (currentAddress < totalMemory) {
-        totalFragmentation += totalMemory - currentAddress;
-    }
-
-    return totalFragmentation;
+uint32_t MemoryManager::getTotalMemory() {  
+    return totalMemory_; 
 }
 
-void MemoryManager::snapshot(int quantumCycle) const {
-    std::ofstream out("memory_stamp_" + std::to_string(quantumCycle) + ".txt");
 
-    // Timestamp
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    out << "Timestamp: " << std::put_time(std::localtime(&in_time_t), "%m/%d/%Y %I:%M:%S%p") << "\n";
-
-    out << "Number of processes in memory: " << memoryBlocks.size() << "\n";
-    out << "Total external fragmentation in KB: " << calculateExternalFragmentation() << "\n\n";
-
-    out << "----end----- = " << totalMemory << "\n";
-
-    for (const auto& block : memoryBlocks) {
-        out << block.owner->getName() << "\n";
-        out << block.startAddress << "\n";
+uint32_t MemoryManager::calculateExternalFragmentation() const {
+    uint32_t frag = 0;
+    for (const auto& block : blocks_) {
+        if (block.free && block.size < memPerProc_) {
+            frag += block.size;
+        }
     }
+    return frag;
+}
 
-    out << "----start---- = 0\n";
-    out.close();
+std::vector<MemoryBlock> MemoryManager::getMemorySnapshot() const {
+    return blocks_;
 }

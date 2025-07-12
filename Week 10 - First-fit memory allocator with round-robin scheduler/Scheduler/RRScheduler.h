@@ -43,5 +43,7 @@ private:
 
     std::unique_ptr<MemoryManager> memoryManager;
 
-    std::atomic<int> currentCycle{ 0 };
+    uint32_t quantumCycleCounter = 0;
+
+    void takeMemorySnapshot();
 };

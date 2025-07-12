@@ -1,27 +1,28 @@
 #pragma once
 #include <vector>
+#include <cstdint>
 #include <string>
-#include <memory>
-#include "../Scheduler/OSProcess.h"
 
 struct MemoryBlock {
-    int startAddress;
-    int size;
-    std::shared_ptr<OsProcess> owner;
+    uint32_t start;
+    uint32_t size;
+    bool free;
+    std::string processName;
 };
 
 class MemoryManager {
 public:
-    MemoryManager(int totalMemory, int memPerProc);
+    MemoryManager(uint32_t totalMemory, uint32_t memPerProc);
 
-    bool allocateProcess(std::shared_ptr<OsProcess> process);
-    void deallocateProcess(std::shared_ptr<OsProcess> process);
-    void snapshot(int quantumCycle) const;
+
+    bool allocate(const std::string& processName);
+    void deallocate(const std::string& processName);
+    uint32_t getTotalMemory();
+    uint32_t calculateExternalFragmentation() const;
+    std::vector<MemoryBlock> getMemorySnapshot() const;
 
 private:
-    int totalMemory;
-    int memPerProc;
-    std::vector<MemoryBlock> memoryBlocks;
-
-    int calculateExternalFragmentation() const;
+    uint32_t totalMemory_;
+    uint32_t memPerProc_;
+    std::vector<MemoryBlock> blocks_;
 };
