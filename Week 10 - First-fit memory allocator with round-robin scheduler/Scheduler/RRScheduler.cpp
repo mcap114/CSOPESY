@@ -1,0 +1,84 @@
+#include "RRScheduler.h"
+#include <chrono>
+#include <iostream>
+
+RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerExec)
+    : numCores(numCores), quantumCycles(quantumCycles), delayPerExec(delayPerExec) {
+
+    for (unsigned int i = 0; i < numCores; ++i) {
+        workerThreads.emplace_back([this, i] { this->workerLoop(i); });
+    }
+
+    // std::cout << "RR Scheduler initialized with " << numCores << " cores, quantum " << quantumCycles << ", delay " << delayPerExec << "ms\n";
+}
+
+RRScheduler::~RRScheduler() {
+    shutdown();
+}
+
+void RRScheduler::addProcess(std::shared_ptr<Process> process) {
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        processQueue.push(process);
+        processMap[process->getName()] = process;
+    }
+    cv.notify_all();
+}
+
+std::shared_ptr<Process> RRScheduler::getProcess(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    auto it = processMap.find(name);
+    if (it != processMap.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
+void RRScheduler::workerLoop(unsigned int coreId) {
+    while (running) {
+        std::shared_ptr<Process> process = nullptr;
+
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            cv.wait(lock, [this] {
+                return !processQueue.empty() || !running;
+                });
+
+            if (!running) return;
+
+            if (!processQueue.empty()) {
+                process = processQueue.front();
+                processQueue.pop();
+            }
+        }
+
+        if (process) {
+            int executed = 0;
+
+            while (!process->isCompleted() && executed < quantumCycles && running) {
+                process->executeNextInstruction(coreId);
+                std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
+                executed++;
+            }
+
+            if (!process->isCompleted() && running) {
+                std::lock_guard<std::mutex> lock(queueMutex);
+                processQueue.push(process); // put it back at the end
+                cv.notify_all();
+            }
+        }
+    }
+}
+
+void RRScheduler::shutdown() {
+    running = false;
+    cv.notify_all();
+
+    for (auto& thread : workerThreads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
+    std::cout << "Round-Robin Scheduler shutdown complete\n";
+}
