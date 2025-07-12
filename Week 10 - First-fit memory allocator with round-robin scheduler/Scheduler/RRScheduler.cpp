@@ -1,6 +1,15 @@
-#include "RRScheduler.h"
+﻿#include "RRScheduler.h"
 #include <chrono>
 #include <iostream>
+
+// windows-specific thread initialization 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <process.h>
+#endif
 
 RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerExec)
     : numCores(numCores), quantumCycles(quantumCycles), delayPerExec(delayPerExec) {
@@ -16,7 +25,7 @@ RRScheduler::~RRScheduler() {
     shutdown();
 }
 
-void RRScheduler::addProcess(std::shared_ptr<Process> process) {
+void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  // ✅ Updated type
     {
         std::lock_guard<std::mutex> lock(queueMutex);
         processQueue.push(process);
@@ -25,7 +34,7 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     cv.notify_all();
 }
 
-std::shared_ptr<Process> RRScheduler::getProcess(const std::string& name) const {
+std::shared_ptr<OsProcess> RRScheduler::getProcess(const std::string& name) const { // ✅ Updated type
     std::lock_guard<std::mutex> lock(queueMutex);
     auto it = processMap.find(name);
     if (it != processMap.end()) {
@@ -36,7 +45,7 @@ std::shared_ptr<Process> RRScheduler::getProcess(const std::string& name) const 
 
 void RRScheduler::workerLoop(unsigned int coreId) {
     while (running) {
-        std::shared_ptr<Process> process = nullptr;
+        std::shared_ptr<OsProcess> process = nullptr;  // ✅ Updated type
 
         {
             std::unique_lock<std::mutex> lock(queueMutex);
