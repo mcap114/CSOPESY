@@ -128,8 +128,13 @@ void RRScheduler::takeMemorySnapshot() {
     uint32_t totalMemory = memoryManager->getTotalMemory(); 
     uint32_t addr = totalMemory;  
 
-    std::string filename = "memory_stamp_" + std::to_string(quantumCycleCounter) + ".txt";  
-    std::ofstream file(filename);  
+    std::string folder = "MemoryStamp";
+    if (!std::filesystem::exists(folder)) {
+        std::filesystem::create_directory(folder);
+    }
+
+    std::string filename = folder + "/memory_stamp_" + std::to_string(quantumCycleCounter) + ".txt";
+    std::ofstream file(filename);
 
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());  
     file << "Timestamp: (" << std::ctime(&now) << ")\n";  

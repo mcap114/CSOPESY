@@ -321,11 +321,20 @@ void CLI::handleSchedulerStop(const std::string& args) {
 }
 
 void CLI::handleReportUtil(const std::string& args) {
-    std::cout << "Scheduler Utilization Report:\n";
-    std::cout << "---------------------------\n";
-    // TODO: add actual utilization reporting logic here
-    std::cout << "Processes completed: [implement reporting]\n";
-    std::cout << "Current queue size: [implement reporting]\n";
+    std::string report = screen_manager_.listScreens(); 
+    static int reportCounter = 1;
+    std::string filename = "csopesy-log_" + std::to_string(reportCounter++) + ".txt";
+ 
+    std::ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to write report to file.\n";
+        return;
+    }
+
+    outFile << report;
+    outFile.close();
+
+    std::cout << "Report generated at C:/" << filename << "\n";
 }
 
 void CLI::handleExit(const std::string& args) {
