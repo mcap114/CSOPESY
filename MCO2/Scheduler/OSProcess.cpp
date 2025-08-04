@@ -177,3 +177,34 @@ void OsProcess::executeNextInstruction(int coreId) {
         updateCallback(name, coreId, progress);
     }
 }
+
+void OsProcess::simulateMemoryViolation(uintptr_t invalidAddr) {
+    memoryViolation = true;
+
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm tm_buf;
+    #ifdef _WIN32
+        localtime_s(&tm_buf, &now);
+    #else
+        localtime_r(&now, &tm_buf);
+    #endif
+    char buffer[9];
+    std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &tm_buf);
+
+    violationTimestamp = buffer;
+    std::stringstream ss;
+    ss << "0x" << std::hex << invalidAddr;
+    invalidAddress = ss.str();
+}
+
+bool OsProcess::hasMemoryViolation() const {
+    return memoryViolation;
+}
+
+std::string OsProcess::getViolationTimestamp() const {
+    return violationTimestamp;
+}
+
+std::string OsProcess::getInvalidAddress() const {
+    return invalidAddress;
+}

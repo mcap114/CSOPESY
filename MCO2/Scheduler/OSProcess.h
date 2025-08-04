@@ -25,7 +25,7 @@ struct Instruction {
     std::string message;
 };
 
-class OsProcess { // ✅ Renamed class
+class OsProcess { 
 public:
     OsProcess(const std::string& name, int totalPrints);
     void executePrint(int coreId);
@@ -49,7 +49,12 @@ public:
     int getInstructionPointer() const { return instruction_ptr; }
     int getInstructionCount() const { return static_cast<int>(instructions.size()); }
     int getInstructionLine() const { return instruction_ptr; }
-    void setSleepTicks(uint8_t ticks); //Added
+    void setSleepTicks(uint8_t ticks); 
+
+    void simulateMemoryViolation(uintptr_t invalidAddr);
+    bool hasMemoryViolation() const;
+    std::string getViolationTimestamp() const;
+    std::string getInvalidAddress() const;
 
 private:
     std::string name;
@@ -72,4 +77,8 @@ private:
     int instruction_ptr = 0;
 
     UpdateCallback updateCallback;
+
+    bool memoryViolation = false;
+    std::string violationTimestamp;
+    std::string invalidAddress;
 };

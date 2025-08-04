@@ -226,7 +226,14 @@ void CLI::handleScreen(const std::string& args) {
     }
     else if (mode == 'r') {
         if (!screen_manager_.screenExists(name)) {
-            std::cout << "Process " << name << " not found. Need to be initialized via screen -s " << name << "\n";
+            auto proc = scheduler_->getProcess(name);
+            if (proc && proc->hasMemoryViolation()) {
+                std::cout << "Process " << name << " shut down due to memory access violation error that occurred at "
+                        << proc->getViolationTimestamp() << ". "
+                        << proc->getInvalidAddress() << " invalid.\n";
+            } else {
+                std::cout << "Process " << name << " not found.\n";
+            }
             return;
         }
         
