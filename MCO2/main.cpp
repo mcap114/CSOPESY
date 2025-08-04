@@ -1,14 +1,3 @@
-/**
-    COMMAND
-    
-    g++ -std=c++17 \
-    -ICLI -ICore -IScheduler -IScreen -IUtilities -IMemory \
-    CLI/*.cpp Core/*.cpp Scheduler/*.cpp Screen/*.cpp Utilities/*.cpp Memory/*.cpp \
-    main.cpp -o main
-
-    ./main
- */
-
 #include "CLI/CLI.h"
 #include <iostream>
 
