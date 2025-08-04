@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <thread>   // For sleep
 #include <chrono>   // For milliseconds
-
+#include <algorithm>
 
 CLI::CLI() :
     current_state_(AppState::MAIN_MENU),

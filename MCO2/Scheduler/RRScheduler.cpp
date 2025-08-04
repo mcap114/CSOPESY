@@ -10,6 +10,9 @@
 #include <windows.h>
 #include <process.h>
 #endif
+#include <filesystem>
+namespace fs = std::filesystem;
+
 
 RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerExec, int maxOverallMem, int memPerProc)
     : numCores(numCores), quantumCycles(quantumCycles), delayPerExec(delayPerExec) {
