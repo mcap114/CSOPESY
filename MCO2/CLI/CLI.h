@@ -32,6 +32,8 @@ private:
     std::unique_ptr<BaseScheduler> scheduler_;
     CPUTimer cpu_timer_;
     std::unique_ptr<ReportGenerator> report_gen_;
+    uint64_t pages_paged_in_ = 0;
+    uint64_t pages_paged_out_ = 0;
 
     // Command map with argument support
     std::unordered_map<std::string, std::function<void(const std::string&)>> commands;
@@ -47,6 +49,8 @@ private:
     void handleSchedulerTest(const std::string& args);
     void handleSchedulerStop(const std::string& args);
     void handleReportUtil(const std::string& args);
+    void handleProcessSMI(const std::string& args);
+    void handleVmstat(const std::string& args);
     void handleExit(const std::string& args);
     void handleSleep(const std::string& args);
     void handleFor(const std::string& args);

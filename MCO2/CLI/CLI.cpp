@@ -19,6 +19,8 @@ CLI::CLI() :
     commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
+    commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
+    commands["vm-stat"] = [this](const std::string& args) { handleVmstat(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
 
@@ -58,6 +60,8 @@ CLI::CLI(const Config& config)
     commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
+    commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
+    commands["vm-stat"] = [this](const std::string& args) { handleVmstat(args); };
     commands["clear"] = [this](const std::string& args) { clearScreen(); };
     commands["exit"] = [this](const std::string& args) { handleExit(args); };
     commands["sleep"] = [this](const std::string& args) { handleSleep(args); };
@@ -335,6 +339,83 @@ void CLI::handleReportUtil(const std::string& args) {
     outFile.close();
 
     std::cout << "Report generated at C:/" << filename << "\n";
+}
+
+void CLI::handleProcessSMI(const std::string& args) {
+    int totalMemKB = config_.getInt("max-overall-mem");
+    int memPerProcKB = config_.getInt("mem-per-proc");
+
+    std::vector<ProcessInfo> allProcesses;
+    for (const auto& key : config_.getOrder()) {
+        Screen* screen = screen_manager_.getScreen(key);
+        if (screen) {
+            for (const auto& proc : screen->getProcesses()) {
+                allProcesses.push_back(proc);
+            }
+        }
+    }
+
+    int procCount = static_cast<int>(allProcesses.size());
+    int usedMemKB = procCount * memPerProcKB;
+    int freeMemKB = totalMemKB - usedMemKB;
+
+    int totalCores = config_.getInt("num-cpu");
+    int usedCores = std::min(procCount, totalCores); 
+    int cpuUtil = (usedCores * 100) / totalCores;
+
+    double usedMiB = usedMemKB / 1024.0;
+    double totalMiB = totalMemKB / 1024.0;
+    int memoryUtil = (int)((usedMiB / totalMiB) * 100);
+
+    std::cout << "------------------------------------------------------------\n";
+    std::cout << "| PROCESS-SMI V01.00  Driver Version: 01.00                |\n";
+    std::cout << "------------------------------------------------------------\n";
+
+    std::cout << "CPU-Util:     " << cpuUtil << "%\n";
+    std::cout << "Memory Usage: " << std::fixed << std::setprecision(0)
+              << usedMiB << "MiB / " << totalMiB << "MiB\n";
+    std::cout << "Memory Util:  " << memoryUtil << "%\n";
+
+    std::cout << "\n------------------------------------------------------------\n";
+    std::cout << "Running processes and memory usage:\n\n";
+
+    for (const auto& proc : allProcesses) {
+        std::cout << proc.name << "    " << memPerProcKB / 1024 << "MiB\n";
+    }
+
+    std::cout << "------------------------------------------------------------\n";
+}
+
+void CLI::handleVmstat(const std::string& args) {
+    int totalMem = config_.getInt("max-overall-mem");
+    int memPerProc = config_.getInt("mem-per-proc");
+
+    // Count active processes
+    int procCount = 0;
+    for (const auto& key : config_.getOrder()) {
+        Screen* screen = screen_manager_.getScreen(key);
+        if (screen) {
+            procCount += static_cast<int>(screen->getProcesses().size());
+        }
+    }
+
+    int usedMem = procCount * memPerProc;
+    int freeMem = totalMem - usedMem;
+
+    unsigned long long ticks = cpu_timer_.getTicks();
+    unsigned long long idleTicks = std::max(0ull, ticks / 3);  // simulate 33% idle
+    unsigned long long activeTicks = ticks - idleTicks;
+
+    std::cout << "\n======================= VMSTAT =======================\n";
+    std::cout << "Total Memory        : " << totalMem << " KB\n";
+    std::cout << "Used Memory         : " << usedMem << " KB\n";
+    std::cout << "Free Memory         : " << freeMem << " KB\n";
+    std::cout << "Idle CPU Ticks      : " << idleTicks << "\n";
+    std::cout << "Active CPU Ticks    : " << activeTicks << "\n";
+    std::cout << "Total CPU Ticks     : " << ticks << "\n";
+    std::cout << "Pages Paged In      : " << pages_paged_in_ << "\n";
+    std::cout << "Pages Paged Out     : " << pages_paged_out_ << "\n";
+    std::cout << "====================================================\n";
 }
 
 void CLI::handleExit(const std::string& args) {
