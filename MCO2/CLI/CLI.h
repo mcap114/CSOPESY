@@ -55,6 +55,6 @@ private:
     void handleSleep(const std::string& args);
     void handleFor(const std::string& args);
     // Helper functions
-    void createProcessScreen(const std::string& processName, int totalPrints);
-    bool parseScreenArgs(const std::string& args, char& mode, std::string& name);
+    void createProcessScreen(const std::string& processName, int totalPrints, int memorySize);
+    bool parseScreenArgs(const std::string& args, char& mode, std::string& name, int& memorySize);
 };

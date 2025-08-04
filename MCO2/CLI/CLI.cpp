@@ -196,8 +196,10 @@ void CLI::handleScreen(const std::string& args) {
     
     char mode;
     std::string name;
-    if (!parseScreenArgs(args, mode, name)) {
-        std::cout << "Use: screen -r <name> or -s <name> or -ls\n";
+    int memorySize = 0;
+
+    if (!parseScreenArgs(args, mode, name, memorySize)) {
+        std::cout << "Use: screen -r <name> or -s <name> <memory_size> or -ls\n";
         return;
     }
 
@@ -208,9 +210,14 @@ void CLI::handleScreen(const std::string& args) {
 
     // only 'screen -s' creates new screen
     if (mode == 's') {
-        
+        // Validate memory size
+        if (memorySize < 64 || memorySize > 216 || (memorySize & (memorySize - 1)) != 0) {
+            std::cout << "Invalid memory allocation. Must be a power of 2 between 64 and 216 bytes.\n";
+            return;
+        }
+    
         int totalPrints = config_.getInt("max-ins");
-        createProcessScreen(name, totalPrints);
+        createProcessScreen(name, totalPrints, memorySize); // pass memory size
 
         current_state_ = AppState::IN_SCREEN;
         active_screen_name_ = name;
@@ -230,10 +237,10 @@ void CLI::handleScreen(const std::string& args) {
     }
 }
 
-bool CLI::parseScreenArgs(const std::string& args, char& mode, std::string& name) {
+bool CLI::parseScreenArgs(const std::string& args, char& mode, std::string& name, int& memorySize) {
     std::istringstream iss(args);
     std::string flag;
-    iss >> flag >> name;
+    iss >> flag >> name >> memorySize;
     return (flag.size() == 2 && flag[0] == '-' &&
         (mode = flag[1]) && (mode == 'r' || mode == 's'));
 }
@@ -244,7 +251,7 @@ void CLI::returnToMainMenu() {
     clearScreen();
 }
 
-void CLI::createProcessScreen(const std::string& processName, int totalPrints) {
+void CLI::createProcessScreen(const std::string& processName, int totalPrints, int memorySize) {
     // Create or focus the screen
     screen_manager_.createOrFocusScreen(processName, true);
 
@@ -307,7 +314,8 @@ void CLI::handleSchedulerTest(const std::string& args) {
 
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
-        createProcessScreen(name, printsPerProcess);
+        int memorySize = config_.getInt("mem-per-proc");
+        createProcessScreen(name, printsPerProcess, memorySize);
 
         // Simulate delay between process creation
         for (int j = 0; j < freq; ++j) {
