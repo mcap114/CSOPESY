@@ -23,14 +23,20 @@ RRScheduler::RRScheduler(unsigned int numCores, int quantumCycles, int delayPerE
         workerThreads.emplace_back([this, i] { this->workerLoop(i); });
     }
 
-    // std::cout << "RR Scheduler initialized with " << numCores << " cores, quantum " << quantumCycles << ", delay " << delayPerExec << "ms\n";
+    std::ofstream log("allocation-debug.log", std::ios::app);
+    log << "[INFO] MemoryManager created in constructor\n";
+    log.close();
 }
 
 RRScheduler::~RRScheduler() {
     shutdown();
 }
 
-void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {  
+void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) { 
+    std::ofstream log("rrscheduler.log", std::ios::app);
+    log << "[DEBUG] RRScheduler::addProcess called for " << process->getName() << "\n";
+    log.close();
+ 
     {
         std::lock_guard<std::mutex> lock(queueMutex);
 
@@ -41,6 +47,8 @@ void RRScheduler::addProcess(std::shared_ptr<OsProcess> process) {
             processQueue.push(process);
             return;
         }
+        memoryManager->writeToBackingStore();
+
         processQueue.push(process);
         processMap[process->getName()] = process;
     }

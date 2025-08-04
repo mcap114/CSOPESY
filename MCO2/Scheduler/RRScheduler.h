@@ -23,7 +23,7 @@ public:
     void shutdown();
 
     std::shared_ptr<OsProcess> getProcess(const std::string& name) const;  
-
+    MemoryManager* getMemoryManager() const { return memoryManager.get(); }
 private:
     void workerLoop(unsigned int coreId);
 

@@ -20,7 +20,7 @@ public:
     uint32_t getTotalMemory();
     uint32_t calculateExternalFragmentation() const;
     std::vector<MemoryBlock> getMemorySnapshot() const;
-
+    void writeToBackingStore(const std::string& filename = "csopesy-backing-store.txt") const; //for writing to backingstore txt file
 private:
     uint32_t totalMemory_;
     uint32_t memPerProc_;

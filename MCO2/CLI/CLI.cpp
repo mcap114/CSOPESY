@@ -46,6 +46,7 @@ CLI::CLI(const Config& config)
     if (scheduler_type == "rr") {
         int quantum = config_.getInt("quantum-cycles");
         scheduler_ = std::make_unique<RRScheduler>(num_cores, quantum, delay, maxMem, memPerProc);
+        std::cout << "[DEBUG] Scheduler type: " << scheduler_type << "\n";
     }
     else if (scheduler_type == "fcfs") {
         scheduler_ = std::make_unique<FCFSScheduler>(num_cores,delay);
@@ -304,6 +305,11 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints, i
 
     scheduler_->addProcess(proc);
 
+    auto* rr = dynamic_cast<RRScheduler*>(scheduler_.get());
+        if (rr && rr->getMemoryManager()) {
+            rr->getMemoryManager()->writeToBackingStore();
+        }
+
     screen_manager_.addProcess(processName, info);
 }
 
@@ -336,7 +342,7 @@ void CLI::handleSchedulerStop(const std::string& args) {
     scheduler_->shutdown();
     std::cout << "Scheduler stopped\n";
     // reinitialize scheduler for future use
-    scheduler_ = std::make_unique<FCFSScheduler>(4);
+   // scheduler_ = std::make_unique<FCFSScheduler>(4);
 }
 
 void CLI::handleReportUtil(const std::string& args) {
@@ -361,14 +367,12 @@ void CLI::handleProcessSMI(const std::string& args) {
     int memPerProcKB = config_.getInt("mem-per-proc");
 
     std::vector<ProcessInfo> allProcesses;
-    for (const auto& key : config_.getOrder()) {
-        Screen* screen = screen_manager_.getScreen(key);
-        if (screen) {
-            for (const auto& proc : screen->getProcesses()) {
-                allProcesses.push_back(proc);
-            }
+    for (const auto& [screenName, screenPtr] : screen_manager_.getAllScreens()) {
+    for (const auto& proc : screenPtr->getProcesses()) {
+        allProcesses.push_back(proc);
         }
     }
+
 
     int procCount = static_cast<int>(allProcesses.size());
     int usedMemKB = procCount * memPerProcKB;
@@ -399,6 +403,7 @@ void CLI::handleProcessSMI(const std::string& args) {
     }
 
     std::cout << "------------------------------------------------------------\n";
+
 }
 
 void CLI::handleVmstat(const std::string& args) {
@@ -431,6 +436,30 @@ void CLI::handleVmstat(const std::string& args) {
     std::cout << "Pages Paged In      : " << pages_paged_in_ << "\n";
     std::cout << "Pages Paged Out     : " << pages_paged_out_ << "\n";
     std::cout << "====================================================\n";
+
+    auto* rr = dynamic_cast<RRScheduler*>(scheduler_.get());
+    if (rr) {
+        auto snapshot = rr->getMemoryManager()->getMemorySnapshot();
+
+        std::cout << "\nMemory Frame Allocation:\n";
+        std::cout << "--------------------------------------------------\n";
+        std::cout << "| Start Addr | Size | Status | Process          |\n";
+        std::cout << "--------------------------------------------------\n";
+        for (const auto& block : snapshot) {
+            std::cout << "| "
+                    << std::setw(10) << block.start << " | "
+                    << std::setw(4)  << block.size  << " | "
+                    << std::setw(6)  << (block.free ? "FREE" : "USED") << " | "
+                    << std::setw(15) << block.processName << " |\n";
+        }
+        std::cout << "--------------------------------------------------\n";
+
+         auto* rr = dynamic_cast<RRScheduler*>(scheduler_.get());
+            if (rr && rr->getMemoryManager()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                rr->getMemoryManager()->writeToBackingStore();
+            }
+    }
 }
 
 void CLI::handleExit(const std::string& args) {
