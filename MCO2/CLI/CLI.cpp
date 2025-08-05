@@ -20,7 +20,7 @@ CLI::CLI() :
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
     commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerStart(args); };
-    //commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerTest(args); };
+    commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerStart(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
@@ -98,6 +98,7 @@ if (schedulerType == "fcfs") {
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
     commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerStart(args); };
+    commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerStart(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
@@ -500,7 +501,7 @@ void CLI::handleSchedulerStart(const std::string& args) {
 
     int processCounter = 1;
 
-    const int totalTicks = 60;  // default
+    const int totalTicks = 100;  // default
     for (int tick = 1; tick <= totalTicks; ++tick) {
         cpu_timer_.tick();  // increment
 
@@ -523,8 +524,8 @@ void CLI::handleSchedulerStart(const std::string& args) {
 
 
 void CLI::handleSchedulerTest(const std::string& args) {
-    int numProcesses = 10;
-    int printsPerProcess = 100;
+    int numProcesses = 100;
+    int printsPerProcess = 1000;
     int freq = config_.getInt("batch-process-freq");
 
     std::istringstream iss(args);
