@@ -59,8 +59,10 @@ public:
     std::string getInvalidAddress() const;
     void parseUserInstructions(const std::vector<std::string>& lines);
 
-
+    uint32_t memoryLimit = 0;            // upper memory boundary (set externally)
 private:
+    static constexpr uint32_t SYMBOL_TABLE_LIMIT = 64;
+    static constexpr uint32_t MAX_VARIABLES = SYMBOL_TABLE_LIMIT / 2;
     std::string name;
     int process_id_ = -1;
     int totalPrints;
@@ -86,6 +88,9 @@ private:
     std::string violationTimestamp;
     std::string invalidAddress;
 
-    std::unordered_map<uint32_t, uint16_t> simulatedMemory;
 
+    std::unordered_map<uint32_t, uint16_t> simulatedMemory;   // memory space
+ 
+
+    void simulateMemoryViolation(uint32_t address); // shuts down the process
 };

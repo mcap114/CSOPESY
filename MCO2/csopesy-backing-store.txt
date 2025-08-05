@@ -1,5 +1,2 @@
 Start,Size,Status,Process
-0,4096,USED,process2
-4096,4096,USED,process2
-8192,4096,USED,process2
-12288,4096,FREE,-
+0,16384,FREE,-

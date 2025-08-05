@@ -321,6 +321,7 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints, i
     int instructionCount = minIns + (rand() % (maxIns - minIns + 1));
 
     auto proc = std::make_shared<OsProcess>(processName, instructionCount);
+    proc->memoryLimit = config_.getInt("max-overall-mem");
     proc->setProcessId(procId);  
 
     //int instructionCount = rand() % 6 + 5; // random between 5 and 10

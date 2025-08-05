@@ -5,6 +5,9 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
+
+const uint32_t MEMORY_LIMIT = 1 << 16;  // 64KB limit (or set based on your system design)
 
 OsProcess::OsProcess(const std::string& name, int totalPrints) 
     : name(name), totalPrints(totalPrints) {
@@ -45,7 +48,7 @@ const std::vector<std::string>& OsProcess::getLogs() const {
 }
 
 bool OsProcess::isCompleted() const {
-    return printsCompleted >= totalPrints;
+    return instruction_ptr >= static_cast<int>(instructions.size());
 }
 
 const std::string& OsProcess::getName() const {
@@ -134,12 +137,19 @@ void OsProcess::executeNextInstruction(int coreId) {
         catch (...) {
             return 0;
         }
-        };
+    };
 
     switch (instr.type) {
     case InstructionType::DECLARE: {
+        if (variables.size() >= MAX_VARIABLES) {
+            log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                + " DECLARE ignored: symbol table full";
+            break;
+        }
+
         uint16_t value = getValue(instr.operand1);
         variables[instr.target] = value;
+
         log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
             + " DECLARE(" + instr.target + ", " + instr.operand1 + ")";
         break;
@@ -161,14 +171,17 @@ void OsProcess::executeNextInstruction(int coreId) {
             + " SUBTRACT(" + instr.target + ", " + instr.operand1 + ", " + instr.operand2 + ")";
         break;
     }
-
     case InstructionType::WRITE: {
         try {
-            // instr.target is address (e.g. 0x500), instr.operand1 is value or variable
-            uint32_t address = std::stoul(instr.target, nullptr, 16);  // convert hex string
-            uint16_t value = getValue(instr.operand1);  // get from variable or direct
+            uint32_t address = std::stoul(instr.target, nullptr, 16);  // e.g., 0x1000
+            uint16_t value = getValue(instr.operand1);
 
-            // optional: validate address range here if you want
+            if (address + 1 >= MEMORY_LIMIT) {
+                simulateMemoryViolation(address);
+                return;
+            }
+
+            value = std::clamp(value, static_cast<uint16_t>(0), static_cast<uint16_t>(65535));
             simulatedMemory[address] = value;
 
             log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
@@ -179,12 +192,27 @@ void OsProcess::executeNextInstruction(int coreId) {
         }
         break;
     }
-
     case InstructionType::READ: {
         try {
-            // instr.target = variable name, instr.operand1 = hex address
+            if (variables.size() >= 32) {
+                log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                    + " READ ignored: symbol table full";
+                break;
+            }
+
             uint32_t address = std::stoul(instr.operand1, nullptr, 16);
+
+            if (address + 1 >= MEMORY_LIMIT) {
+                simulateMemoryViolation(address);
+                return;
+            }
+
             uint16_t value = simulatedMemory.count(address) ? simulatedMemory[address] : 0;
+            if (variables.size() >= MAX_VARIABLES && variables.find(instr.target) == variables.end()) {
+                log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                    + " READ ignored: symbol table full";
+                break;
+            }
 
             variables[instr.target] = value;
 
@@ -196,10 +224,19 @@ void OsProcess::executeNextInstruction(int coreId) {
         }
         break;
     }
-
     case InstructionType::PRINT: {
+        std::string finalMsg = instr.message;
+
+        for (const auto& [var, val] : variables) {
+            std::string placeholder = var;
+            size_t pos;
+            while ((pos = finalMsg.find(placeholder)) != std::string::npos) {
+                finalMsg.replace(pos, placeholder.length(), std::to_string(val));
+            }
+        }
+
         log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
-            + " PRINT: " + instr.message;
+            + " PRINT: " + finalMsg;
         break;
     }
     }
@@ -231,6 +268,10 @@ void OsProcess::simulateMemoryViolation(uintptr_t invalidAddr) {
     std::stringstream ss;
     ss << "0x" << std::hex << invalidAddr;
     invalidAddress = ss.str();
+}
+
+void OsProcess::simulateMemoryViolation(uint32_t address) {
+    simulateMemoryViolation(static_cast<uintptr_t>(address));
 }
 
 bool OsProcess::hasMemoryViolation() const {
@@ -275,12 +316,42 @@ void OsProcess::parseUserInstructions(const std::vector<std::string>& lines) {
         }
         else if (keyword == "PRINT") {
             instr.type = InstructionType::PRINT;
-            std::getline(iss, instr.message); // grab rest of the line
-            // Remove leading quote and trailing quote
-            size_t first_quote = instr.message.find('"');
-            size_t last_quote = instr.message.rfind('"');
-            if (first_quote != std::string::npos && last_quote != std::string::npos && last_quote > first_quote) {
-                instr.message = instr.message.substr(first_quote + 1, last_quote - first_quote - 1);
+            
+            // Find the opening parenthesis
+            size_t openParen = line.find('(');
+            if (openParen == std::string::npos) {
+                continue; // Invalid format, skip
+            }
+            
+            // Find the closing parenthesis
+            size_t closeParen = line.rfind(')');
+            if (closeParen == std::string::npos || closeParen <= openParen) {
+                continue; // Invalid format, skip
+            }
+            
+            // Extract the content between parentheses
+            std::string content = line.substr(openParen + 1, closeParen - openParen - 1);
+            
+            // Remove any quotes if present
+            size_t firstQuote = content.find('"');
+            size_t lastQuote = content.rfind('"');
+            
+            if (firstQuote != std::string::npos && lastQuote != std::string::npos && lastQuote > firstQuote) {
+                // Extract text between quotes
+                instr.message = content.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+                
+                // Check for concatenation with +
+                size_t plusPos = content.find('+', lastQuote);
+                if (plusPos != std::string::npos) {
+                    std::string varPart = content.substr(plusPos + 1);
+                    // Trim whitespace from variable name
+                    varPart.erase(0, varPart.find_first_not_of(" \t"));
+                    varPart.erase(varPart.find_last_not_of(" \t") + 1);
+                    instr.message += " " + varPart; // Add space and variable name
+                }
+            } else {
+                // No quotes, use the entire content
+                instr.message = content;
             }
         }
         else {
