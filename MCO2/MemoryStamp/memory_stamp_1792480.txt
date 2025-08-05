@@ -1,0 +1,10 @@
+Timestamp: (Tue Aug  5 11:30:45 2025
+)
+Number of processes in memory: 1
+Total external fragmentation in KB: 0
+
+---end--- = 16384
+4096
+myproc
+0
+---start--- = 0

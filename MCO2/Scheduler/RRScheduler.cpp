@@ -118,9 +118,12 @@ void RRScheduler::workerLoop(unsigned int coreId) {
                 executed++;
             }
 
-            if (running && ++quantumCycleCounter % quantumCycles == 0) {
-                takeMemorySnapshot();
+            quantumCycleCounter++;
+
+            if (running && quantumCycleCounter % 10 == 0) {
+                takeMemorySnapshot(); // now only every 10th cycle
             }
+
 
             if (!process->isCompleted() && running) {
                 std::lock_guard<std::mutex> lock(queueMutex);

@@ -56,5 +56,8 @@ private:
     void handleFor(const std::string& args);
     // Helper functions
     void createProcessScreen(const std::string& processName, int totalPrints, int memorySize);
+    void createCustomInstructionScreen(const std::string& processName, int memorySize, const std::string& instructionStr);
     bool parseScreenArgs(const std::string& args, char& mode, std::string& name, int& memorySize);
+    bool parseScreenCustomArgs(const std::string& args, std::string& name, int& memorySize, std::string& instructionStr);
+
 };

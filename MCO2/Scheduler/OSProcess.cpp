@@ -161,6 +161,42 @@ void OsProcess::executeNextInstruction(int coreId) {
             + " SUBTRACT(" + instr.target + ", " + instr.operand1 + ", " + instr.operand2 + ")";
         break;
     }
+
+    case InstructionType::WRITE: {
+        try {
+            // instr.target is address (e.g. 0x500), instr.operand1 is value or variable
+            uint32_t address = std::stoul(instr.target, nullptr, 16);  // convert hex string
+            uint16_t value = getValue(instr.operand1);  // get from variable or direct
+
+            // optional: validate address range here if you want
+            simulatedMemory[address] = value;
+
+            log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                + " WRITE(" + instr.target + ", " + instr.operand1 + ")";
+        } catch (...) {
+            log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                + " WRITE failed due to invalid address/value";
+        }
+        break;
+    }
+
+    case InstructionType::READ: {
+        try {
+            // instr.target = variable name, instr.operand1 = hex address
+            uint32_t address = std::stoul(instr.operand1, nullptr, 16);
+            uint16_t value = simulatedMemory.count(address) ? simulatedMemory[address] : 0;
+
+            variables[instr.target] = value;
+
+            log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                + " READ(" + instr.target + ", " + instr.operand1 + ") = " + std::to_string(value);
+        } catch (...) {
+            log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
+                + " READ failed due to invalid address";
+        }
+        break;
+    }
+
     case InstructionType::PRINT: {
         log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
             + " PRINT: " + instr.message;
@@ -207,4 +243,50 @@ std::string OsProcess::getViolationTimestamp() const {
 
 std::string OsProcess::getInvalidAddress() const {
     return invalidAddress;
+}
+
+void OsProcess::parseUserInstructions(const std::vector<std::string>& lines) {
+    for (const std::string& line : lines) {
+        std::istringstream iss(line);
+        std::string keyword;
+        iss >> keyword;
+
+        Instruction instr;
+
+        if (keyword == "DECLARE") {
+            instr.type = InstructionType::DECLARE;
+            iss >> instr.target >> instr.operand1;
+        }
+        else if (keyword == "ADD") {
+            instr.type = InstructionType::ADD;
+            iss >> instr.target >> instr.operand1 >> instr.operand2;
+        }
+        else if (keyword == "SUBTRACT") {
+            instr.type = InstructionType::SUBTRACT;
+            iss >> instr.target >> instr.operand1 >> instr.operand2;
+        }
+        else if (keyword == "WRITE") {
+            instr.type = InstructionType::WRITE;
+            iss >> instr.target >> instr.operand1;
+        }
+        else if (keyword == "READ") {
+            instr.type = InstructionType::READ;
+            iss >> instr.target >> instr.operand1;
+        }
+        else if (keyword == "PRINT") {
+            instr.type = InstructionType::PRINT;
+            std::getline(iss, instr.message); // grab rest of the line
+            // Remove leading quote and trailing quote
+            size_t first_quote = instr.message.find('"');
+            size_t last_quote = instr.message.rfind('"');
+            if (first_quote != std::string::npos && last_quote != std::string::npos && last_quote > first_quote) {
+                instr.message = instr.message.substr(first_quote + 1, last_quote - first_quote - 1);
+            }
+        }
+        else {
+            continue; // Unknown command, ignore
+        }
+
+        instructions.push_back(instr);
+    }
 }

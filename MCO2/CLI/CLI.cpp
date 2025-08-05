@@ -1,3 +1,4 @@
+#include "Screen.h"
 #include "CLI.h"
 #include <iostream>
 #include <string>
@@ -194,6 +195,29 @@ void CLI::handleScreen(const std::string& args) {
         std::cout << screen_manager_.listScreens();
         return;
     }
+
+    if (args.find("-c") == 0) {
+        std::string name;
+        int memorySize;
+        std::string instructionStr;
+        if (!parseScreenCustomArgs(args, name, memorySize, instructionStr)) {
+            std::cout << "Usage: screen -c <name> <memory_size> \"<instruction_set>\"\n";
+            return;
+        }
+
+        if (memorySize < 64 || memorySize > 216 || (memorySize & (memorySize - 1)) != 0) {
+            std::cout << "Invalid memory allocation. Must be a power of 2 between 64 and 216 bytes.\n";
+            return;
+        }
+
+        current_state_ = AppState::IN_SCREEN;
+        active_screen_name_ = name;
+        createCustomInstructionScreen(name, memorySize, instructionStr);
+        clearScreen();
+        std::cout << screen_manager_.renderScreen(name);
+        return;
+    }
+
     
     char mode;
     std::string name;
@@ -253,6 +277,32 @@ bool CLI::parseScreenArgs(const std::string& args, char& mode, std::string& name
         (mode = flag[1]) && (mode == 'r' || mode == 's'));
 }
 
+bool CLI::parseScreenCustomArgs(const std::string& args, std::string& name, int& memorySize, std::string& instructionStr) {
+    std::istringstream iss(args);
+    std::string flag;
+    iss >> flag >> name >> memorySize;
+
+    // Get everything after memorySize as raw instruction line
+    std::getline(iss, instructionStr);
+
+    // Trim leading/trailing whitespace
+    instructionStr.erase(0, instructionStr.find_first_not_of(" \t"));
+    instructionStr.erase(instructionStr.find_last_not_of(" \t") + 1);
+
+    // Must start and end with double quotes
+    size_t first_quote = instructionStr.find('"');
+    size_t last_quote = instructionStr.rfind('"');
+
+    if (first_quote == std::string::npos || last_quote == std::string::npos || last_quote <= first_quote) {
+        return false;
+    }
+
+    // Extract inside the quotes
+    instructionStr = instructionStr.substr(first_quote + 1, last_quote - first_quote - 1);
+    return true;
+}
+
+
 void CLI::returnToMainMenu() {
     current_state_ = AppState::MAIN_MENU;
     active_screen_name_.clear();
@@ -310,6 +360,71 @@ void CLI::createProcessScreen(const std::string& processName, int totalPrints, i
             rr->getMemoryManager()->writeToBackingStore();
         }
 
+    screen_manager_.addProcess(processName, info);
+}
+void CLI::createCustomInstructionScreen(const std::string& processName, int memorySize, const std::string& instructionStr) {
+    // 1. Split instruction string into vector
+    std::vector<std::string> rawInstructions;
+    std::istringstream stream(instructionStr);
+    std::string instr;
+
+    while (std::getline(stream, instr, ';')) {
+        if (!instr.empty()) {
+            rawInstructions.push_back(instr);
+        }
+    }
+
+    // 2. Validate instruction count
+    if (rawInstructions.size() < 1 || rawInstructions.size() > 50) {
+        std::cout << "Invalid command: instruction count must be between 1 and 50.\n";
+        return;
+    }
+
+    // 3. Prepare screen and process
+    screen_manager_.createOrFocusScreen(processName, true);
+    int procId = next_process_id_++;
+
+    auto proc = std::make_shared<OsProcess>(processName, static_cast<int>(rawInstructions.size()));
+    proc->setProcessId(procId);
+    proc->parseUserInstructions(rawInstructions); // <-- we'll write this next step
+
+    // 4. Prepare screen display info
+    ProcessInfo info;
+    info.id = procId;
+    info.name = processName;
+    info.status = "RUNNING";
+    info.core = -1;
+    info.progress = "0/" + std::to_string(rawInstructions.size());
+
+    std::time_t now = std::time(nullptr);
+    char buffer[20];
+    std::strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S", std::localtime(&now));
+    info.creation_time = buffer;
+
+    info.instruction_line = 0;
+    info.total_instructions = static_cast<int>(rawInstructions.size());
+
+    // 5. Set callback for progress update
+    proc->setUpdateCallback([this, proc](const std::string& pname, int coreId, const std::string& progress) {
+        ProcessInfo updatedInfo;
+        updatedInfo.name = pname;
+        updatedInfo.core = coreId;
+        updatedInfo.status = "RUNNING";
+        updatedInfo.progress = progress;
+        updatedInfo.instruction_line = proc->getInstructionLine();
+        screen_manager_.updateProcess(pname, pname, updatedInfo);
+    });
+
+    // 6. Add to scheduler and memory manager
+    scheduler_->addProcess(proc);
+
+    if (auto* rr = dynamic_cast<RRScheduler*>(scheduler_.get())) {
+        if (rr->getMemoryManager()) {
+            rr->getMemoryManager()->writeToBackingStore(); // only ONCE, no stamp flood
+        }
+    }
+
+    // 7. Add process to screen
     screen_manager_.addProcess(processName, info);
 }
 

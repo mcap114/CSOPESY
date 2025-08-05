@@ -14,7 +14,9 @@ enum class InstructionType {
     DECLARE,
     ADD,
     SUBTRACT,
-    PRINT
+    PRINT,
+    WRITE,
+    READ
 };
 
 struct Instruction {
@@ -55,6 +57,8 @@ public:
     bool hasMemoryViolation() const;
     std::string getViolationTimestamp() const;
     std::string getInvalidAddress() const;
+    void parseUserInstructions(const std::vector<std::string>& lines);
+
 
 private:
     std::string name;
@@ -81,4 +85,7 @@ private:
     bool memoryViolation = false;
     std::string violationTimestamp;
     std::string invalidAddress;
+
+    std::unordered_map<uint32_t, uint16_t> simulatedMemory;
+
 };
