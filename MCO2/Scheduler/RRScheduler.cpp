@@ -118,12 +118,15 @@ void RRScheduler::workerLoop(unsigned int coreId) {
                 executed++;
             }
 
-            quantumCycleCounter++;
+            if (!process->isCompleted()) {
+                auto now = std::chrono::steady_clock::now();
+                auto durationSinceLastSnapshot = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastSnapshotTime);
 
-            if (running && quantumCycleCounter % 10 == 0) {
-                takeMemorySnapshot(); // now only every 10th cycle
+                if (running && durationSinceLastSnapshot.count() >= 1000) {
+                    takeMemorySnapshot();
+                    lastSnapshotTime = now;
+                }
             }
-
 
             if (!process->isCompleted() && running) {
                 std::lock_guard<std::mutex> lock(queueMutex);
@@ -147,7 +150,7 @@ void RRScheduler::takeMemorySnapshot() {
         std::filesystem::create_directory(folder);
     }
 
-    std::string filename = folder + "/memory_stamp_" + std::to_string(quantumCycleCounter) + ".txt";
+    std::string filename = folder + "/memory_stamp_" + std::to_string(snapshotIndex++) + ".txt";
     std::ofstream file(filename);
 
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());  
@@ -171,6 +174,7 @@ void RRScheduler::takeMemorySnapshot() {
     }  
     file << "---start--- = 0\n";  
     file.close();  
+
 }
 
 

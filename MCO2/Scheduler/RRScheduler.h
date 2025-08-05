@@ -44,6 +44,8 @@ private:
     std::unique_ptr<MemoryManager> memoryManager;
 
     std::atomic<uint32_t> quantumCycleCounter{ 0 };
+    std::chrono::steady_clock::time_point lastSnapshotTime = std::chrono::steady_clock::now();
+    int snapshotIndex = 0;
 
     void takeMemorySnapshot();
 };
