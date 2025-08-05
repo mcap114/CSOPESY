@@ -9,6 +9,8 @@
 #include <functional>
 #include <unordered_map>
 #include <cstdint>
+#include <../Memory/MemoryManager.h>
+#include <../Memory/PageTable.h>
 
 enum class InstructionType {
     DECLARE,
@@ -27,7 +29,7 @@ struct Instruction {
     std::string message;
 };
 
-class OsProcess { 
+class OsProcess {
 public:
     OsProcess(const std::string& name, int totalPrints);
     void executePrint(int coreId);
@@ -51,7 +53,7 @@ public:
     int getInstructionPointer() const { return instruction_ptr; }
     int getInstructionCount() const { return static_cast<int>(instructions.size()); }
     int getInstructionLine() const { return instruction_ptr; }
-    void setSleepTicks(uint8_t ticks); 
+    void setSleepTicks(uint8_t ticks);
 
     void simulateMemoryViolation(uintptr_t invalidAddr);
     bool hasMemoryViolation() const;
@@ -59,6 +61,8 @@ public:
     std::string getInvalidAddress() const;
     void parseUserInstructions(const std::vector<std::string>& lines);
 
+    // NEW: PageTable support
+    PageTable& getPageTable() { return pageTable_; }
 
 private:
     std::string name;
@@ -88,4 +92,6 @@ private:
 
     std::unordered_map<uint32_t, uint16_t> simulatedMemory;
 
+    // NEW: Default page count is 8
+    PageTable pageTable_{ 8 };
 };

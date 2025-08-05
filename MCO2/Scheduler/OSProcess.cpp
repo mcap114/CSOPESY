@@ -6,8 +6,8 @@
 #include <cstdlib>
 #include <ctime>
 
-OsProcess::OsProcess(const std::string& name, int totalPrints) 
-    : name(name), totalPrints(totalPrints) {
+OsProcess::OsProcess(const std::string& name, int totalPrints)
+    : name(name), totalPrints(totalPrints), pageTable_(8) { // NEW: initialize with 8 pages
 }
 
 void OsProcess::setUpdateCallback(UpdateCallback cb) {
@@ -161,42 +161,34 @@ void OsProcess::executeNextInstruction(int coreId) {
             + " SUBTRACT(" + instr.target + ", " + instr.operand1 + ", " + instr.operand2 + ")";
         break;
     }
-
     case InstructionType::WRITE: {
         try {
-            // instr.target is address (e.g. 0x500), instr.operand1 is value or variable
-            uint32_t address = std::stoul(instr.target, nullptr, 16);  // convert hex string
-            uint16_t value = getValue(instr.operand1);  // get from variable or direct
-
-            // optional: validate address range here if you want
-            simulatedMemory[address] = value;
-
+            uint32_t address = std::stoul(instr.target, nullptr, 16);
+            uint16_t value = getValue(instr.operand1);
+            simulatedMemory[address] = value; // TODO: Replace with page manager logic later
             log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
                 + " WRITE(" + instr.target + ", " + instr.operand1 + ")";
-        } catch (...) {
+        }
+        catch (...) {
             log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
                 + " WRITE failed due to invalid address/value";
         }
         break;
     }
-
     case InstructionType::READ: {
         try {
-            // instr.target = variable name, instr.operand1 = hex address
             uint32_t address = std::stoul(instr.operand1, nullptr, 16);
             uint16_t value = simulatedMemory.count(address) ? simulatedMemory[address] : 0;
-
             variables[instr.target] = value;
-
             log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
                 + " READ(" + instr.target + ", " + instr.operand1 + ") = " + std::to_string(value);
-        } catch (...) {
+        }
+        catch (...) {
             log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
                 + " READ failed due to invalid address";
         }
         break;
     }
-
     case InstructionType::PRINT: {
         log = "[" + getCurrentTimestamp() + "] Core:" + std::to_string(coreId)
             + " PRINT: " + instr.message;
@@ -219,11 +211,11 @@ void OsProcess::simulateMemoryViolation(uintptr_t invalidAddr) {
 
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm tm_buf;
-    #ifdef _WIN32
-        localtime_s(&tm_buf, &now);
-    #else
-        localtime_r(&now, &tm_buf);
-    #endif
+#ifdef _WIN32
+    localtime_s(&tm_buf, &now);
+#else
+    localtime_r(&now, &tm_buf);
+#endif
     char buffer[9];
     std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &tm_buf);
 
@@ -275,8 +267,7 @@ void OsProcess::parseUserInstructions(const std::vector<std::string>& lines) {
         }
         else if (keyword == "PRINT") {
             instr.type = InstructionType::PRINT;
-            std::getline(iss, instr.message); // grab rest of the line
-            // Remove leading quote and trailing quote
+            std::getline(iss, instr.message);
             size_t first_quote = instr.message.find('"');
             size_t last_quote = instr.message.rfind('"');
             if (first_quote != std::string::npos && last_quote != std::string::npos && last_quote > first_quote) {
@@ -284,9 +275,10 @@ void OsProcess::parseUserInstructions(const std::vector<std::string>& lines) {
             }
         }
         else {
-            continue; // Unknown command, ignore
+            continue;
         }
 
         instructions.push_back(instr);
     }
 }
+

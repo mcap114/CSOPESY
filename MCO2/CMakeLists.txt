@@ -16,6 +16,7 @@ include_directories(
     "${MCO2_DIR}/Screen"
     "${MCO2_DIR}/Core"
     "${MCO2_DIR}/Scheduler"
+    "${MCO2_DIR}/Memory"
 )
 
 # Define the source files explicitly
@@ -30,6 +31,7 @@ set(SOURCES
     "${MCO2_DIR}/Scheduler/RRScheduler.cpp"
     "${MCO2_DIR}/Scheduler/FCFSScheduler.cpp"
     "${MCO2_DIR}/Memory/MemoryManager.cpp"
+    "${MCO2_DIR}/Memory/PageTable.cpp"
     "${MCO2_DIR}/Utilities/ReportGenerator.cpp"
 )
 
@@ -49,6 +51,8 @@ set(HEADERS
     "${MCO2_DIR}/Scheduler/BaseScheduler.h"
 
     "${MCO2_DIR}/Memory/MemoryManager.h"
+    "${MCO2_DIR}/Memory/PageTable.h"
+    "${MCO2_DIR}/Memory/Page.h"
 
     "${MCO2_DIR}/Utilities/ReportGenerator.h"
 )
