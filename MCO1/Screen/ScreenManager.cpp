@@ -17,7 +17,7 @@ void ScreenManager::removeScreen(const std::string& name) {
 }
 
 bool ScreenManager::screenExists(const std::string& name) const {
-    std::lock_guard<std::mutex> lock(screen_mutex_);
+    // Check if the screen exists in the screens_ map
     return screens_.find(name) != screens_.end();
 }
 
