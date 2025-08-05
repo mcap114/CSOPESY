@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <functional>
+#include <algorithm>
 #include <memory>
 #include "ScreenManager.h"
 #include "FCFSScheduler.h"
@@ -46,6 +47,7 @@ private:
     // Command handlers (all with args)
     void handleInitialize(const std::string& args);
     void handleScreen(const std::string& args);
+    void handleSchedulerStart(const std::string& args);
     void handleSchedulerTest(const std::string& args);
     void handleSchedulerStop(const std::string& args);
     void handleReportUtil(const std::string& args);

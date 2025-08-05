@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Screen.h"
 #include "CLI.h"
 #include <iostream>
@@ -8,6 +9,7 @@
 #include <thread>   // For sleep
 #include <chrono>   // For milliseconds
 #include <algorithm>
+#include <random>
 
 CLI::CLI() :
     current_state_(AppState::MAIN_MENU),
@@ -17,7 +19,8 @@ CLI::CLI() :
     // Initialize commands
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
-    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
+    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerStart(args); };
+    //commands["scheduler-test"] = [this](const std::string& args) { handleSchedulerTest(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
@@ -39,7 +42,42 @@ CLI::CLI(const Config& config)
     int quantum = config.getInt("quantum-cycles");
     int maxMem = config_.getInt("max-overall-mem");
     int memPerFrame = config_.getInt("mem-per-frame");
-    int memPerProc = config_.getInt("mem-per-proc");
+    int minMemPerProc = config_.getInt("min-mem-per-proc");
+    int maxMemPerProc = config_.getInt("max-mem-per-proc");
+
+    if ((minMemPerProc & (minMemPerProc - 1)) != 0 || (maxMem & (maxMem - 1)) != 0) {
+        throw std::runtime_error("Memory values must be powers of two.");
+    }
+
+    if (minMemPerProc > maxMemPerProc) {
+        throw std::runtime_error("min-mem-per-proc cannot be greater than max-mem-per-proc.");
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(minMemPerProc, maxMemPerProc);
+    
+
+    int rolledMem = dist(gen);
+
+    std::string schedulerType = config_.getString("scheduler");
+if (schedulerType == "fcfs") {
+    std::cout << "[DEBUG] Using FCFS scheduler.\n";
+} else if (schedulerType == "rr") {
+    int quantum = config_.getInt("quantum-cycles");
+    std::cout << "[DEBUG] Using Round-Robin scheduler with quantum " << quantum << ".\n";
+} else {
+    throw std::runtime_error("Unknown scheduler type: " + schedulerType);
+}
+    std::cout << "rolledMem value";
+    std::cout << rolledMem;
+
+    //round to nearest lower power of 2 within range
+    while ((rolledMem & (rolledMem - 1)) != 0) {
+        rolledMem--;  // reduce until it's a power of two
+    }
+
+    int memPerProc = rolledMem;
 
     cpu_timer_.start(); 
     report_gen_ = std::make_unique<ReportGenerator>(num_cores); 
@@ -47,7 +85,7 @@ CLI::CLI(const Config& config)
     if (scheduler_type == "rr") {
         int quantum = config_.getInt("quantum-cycles");
         scheduler_ = std::make_unique<RRScheduler>(num_cores, quantum, delay, maxMem, memPerProc);
-        std::cout << "[DEBUG] Scheduler type: " << scheduler_type << "\n";
+        // std::cout << "[DEBUG] Scheduler type: " << scheduler_type << "\n";
     }
     else if (scheduler_type == "fcfs") {
         scheduler_ = std::make_unique<FCFSScheduler>(num_cores,delay);
@@ -59,7 +97,7 @@ CLI::CLI(const Config& config)
     // Initialize commands
     commands["initialize"] = [this](const std::string& args) { handleInitialize(args); };
     commands["screen"] = [this](const std::string& args) { handleScreen(args); };
-    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerTest(args); };
+    commands["scheduler-start"] = [this](const std::string& args) { handleSchedulerStart(args); };
     commands["scheduler-stop"] = [this](const std::string& args) { handleSchedulerStop(args); };
     commands["report-util"] = [this](const std::string& args) { handleReportUtil(args); };
     commands["process-smi"] = [this](const std::string& args) { handleProcessSMI(args); };
@@ -428,6 +466,62 @@ void CLI::createCustomInstructionScreen(const std::string& processName, int memo
     screen_manager_.addProcess(processName, info);
 }
 
+void CLI::handleSchedulerStart(const std::string& args) {
+    int batchFreq = config_.getInt("batch-process-freq");
+    int minInstructions = config_.getInt("min-ins");
+    int maxInstructions = config_.getInt("max-ins");
+    int minMem = config_.getInt("min-mem-per-proc");
+    int maxMem = config_.getInt("max-mem-per-proc");
+
+    if (minMem > maxMem) {
+        throw std::runtime_error("min-mem-per-proc is greater than max-mem-per-proc.");
+    }
+
+    // Gather all valid power-of-two sizes between min and max mem
+    std::vector<int> validMemSizes;
+    for (int p = 6; p <= 16; ++p) {
+        int size = 1 << p;
+        if (size >= minMem && size <= maxMem) {
+            validMemSizes.push_back(size);
+        }
+    }
+
+    if (validMemSizes.empty()) {
+        throw std::runtime_error("No valid memory sizes (power of two) between min and max mem per proc.");
+    }
+
+    // Setup random generators
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> memDist(0, validMemSizes.size() - 1);
+    std::uniform_int_distribution<> insDist(minInstructions, maxInstructions);
+
+    std::cout << "[INFO] Scheduler started. Generating processes every " << batchFreq << " cycles...\n";
+
+    int processCounter = 1;
+
+    const int totalTicks = 60;  // default
+    for (int tick = 1; tick <= totalTicks; ++tick) {
+        cpu_timer_.tick();  // increment
+
+        if (tick % batchFreq == 0) {
+            // create a new process
+            std::string name = "proc" + std::to_string(processCounter++);
+            int memSize = validMemSizes[memDist(gen)];
+            int numInstructions = insDist(gen);
+
+            createProcessScreen(name, numInstructions, memSize);
+
+            std::cout << "[INFO] Created process " << name
+                << " with " << numInstructions << " instructions and "
+                << memSize << " bytes of memory.\n";
+        }
+    }
+
+    std::cout << "[INFO] Scheduler finished after " << totalTicks << " ticks.\n";
+}
+
+
 void CLI::handleSchedulerTest(const std::string& args) {
     int numProcesses = 10;
     int printsPerProcess = 100;
@@ -442,7 +536,7 @@ void CLI::handleSchedulerTest(const std::string& args) {
 
     for (int i = 1; i <= numProcesses; i++) {
         std::string name = "process" + std::to_string(i);
-        int memorySize = config_.getInt("mem-per-proc");
+        int memorySize = config_.getInt("max-mem-per-proc");
         createProcessScreen(name, printsPerProcess, memorySize);
 
         // Simulate delay between process creation
@@ -479,7 +573,7 @@ void CLI::handleReportUtil(const std::string& args) {
 
 void CLI::handleProcessSMI(const std::string& args) {
     int totalMemKB = config_.getInt("max-overall-mem");
-    int memPerProcKB = config_.getInt("mem-per-proc");
+    int memPerProcKB = config_.getInt("max-mem-per-proc");
 
     std::vector<ProcessInfo> allProcesses;
     for (const auto& [screenName, screenPtr] : screen_manager_.getAllScreens()) {
@@ -523,16 +617,15 @@ void CLI::handleProcessSMI(const std::string& args) {
 
 void CLI::handleVmstat(const std::string& args) {
     int totalMem = config_.getInt("max-overall-mem");
-    int memPerProc = config_.getInt("mem-per-proc");
+    int memPerProc = config_.getInt("max-mem-per-proc");
 
     // Count active processes
     int procCount = 0;
-    for (const auto& key : config_.getOrder()) {
-        Screen* screen = screen_manager_.getScreen(key);
-        if (screen) {
-            procCount += static_cast<int>(screen->getProcesses().size());
-        }
+    
+    for (const auto& [screenName, screenPtr] : screen_manager_.getAllScreens()) {
+        procCount += static_cast<int>(screenPtr->getProcesses().size());
     }
+
 
     int usedMem = procCount * memPerProc;
     int freeMem = totalMem - usedMem;
@@ -615,3 +708,4 @@ void CLI::handleFor(const std::string& args) {
         std::cout << "Invalid usage. Try: for 5\n";
     }
 }
+

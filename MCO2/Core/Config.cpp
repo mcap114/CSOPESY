@@ -32,8 +32,13 @@ void Config::load(const std::string& filename) {
 
 
 int Config::getInt(const std::string& key) const {
-    return std::stoi(parameters.at(key));
+    auto it = parameters.find(key);
+    if (it == parameters.end()) {
+        throw std::runtime_error("Missing key in config: " + key);
+    }
+    return std::stoi(it->second);
 }
+
 
 std::string Config::getString(const std::string& key) const {
     return parameters.at(key);

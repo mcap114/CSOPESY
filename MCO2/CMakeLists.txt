@@ -14,7 +14,7 @@ set(MCO2_DIR "../MCO2")
 include_directories(
     "${MCO2_DIR}/CLI"
     "${MCO2_DIR}/Screen"
-    "${MCO2_DIR}/Config"
+    "${MCO2_DIR}/Core"
     "${MCO2_DIR}/Scheduler"
 )
 
@@ -24,22 +24,33 @@ set(SOURCES
     "${MCO2_DIR}/CLI/CLI.cpp"
     "${MCO2_DIR}/Screen/Screen.cpp"
     "${MCO2_DIR}/Screen/ScreenManager.cpp"
-    "${MCO2_DIR}/Config/Config.cpp"
+    "${MCO2_DIR}/Core/Config.cpp"
+    "${MCO2_DIR}/Core/CPUTimer.cpp"
+    "${MCO2_DIR}/Scheduler/OSProcess.cpp"
     "${MCO2_DIR}/Scheduler/RRScheduler.cpp"
     "${MCO2_DIR}/Scheduler/FCFSScheduler.cpp"
-    "${MCO2_DIR}/Scheduler/SchedulerFactory.cpp"
+    "${MCO2_DIR}/Memory/MemoryManager.cpp"
+    "${MCO2_DIR}/Utilities/ReportGenerator.cpp"
 )
 
 # Define the headers (optional, helpful for IDEs)
 set(HEADERS
     "${MCO2_DIR}/CLI/CLI.h"
+
     "${MCO2_DIR}/Screen/Screen.h"
     "${MCO2_DIR}/Screen/ScreenManager.h"
-    "${MCO2_DIR}/Config/Config.h"
-    "${MCO2_DIR}/Scheduler/Scheduler.h"
+
+    "${MCO2_DIR}/Core/Config.h"
+    "${MCO2_DIR}/Core/CPUTimer.h"
+
+    "${MCO2_DIR}/Scheduler/OSProcess.h"
     "${MCO2_DIR}/Scheduler/RRScheduler.h"
     "${MCO2_DIR}/Scheduler/FCFSScheduler.h"
-    "${MCO2_DIR}/Scheduler/SchedulerFactory.h"
+    "${MCO2_DIR}/Scheduler/BaseScheduler.h"
+
+    "${MCO2_DIR}/Memory/MemoryManager.h"
+
+    "${MCO2_DIR}/Utilities/ReportGenerator.h"
 )
 
 # Add the executable
